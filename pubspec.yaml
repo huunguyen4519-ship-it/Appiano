@@ -1,0 +1,22 @@
+name: appiano
+description: Ứng dụng luyện piano - bản demo bàn phím ảo.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_soloud: ^3.0.0 # kiểm tra phiên bản mới nhất trên pub.dev
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/piano_c4.wav
