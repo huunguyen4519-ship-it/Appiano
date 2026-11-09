@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: write
+
 jobs:
   analyze:
     runs-on: ubuntu-latest
@@ -23,3 +26,43 @@ jobs:
 
       - name: Analyze project source
         run: flutter analyze
+
+  build-apk:
+    needs: analyze
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # Repo chưa có thư mục android/, tạo ở đây. Lệnh này không ghi đè lib/ và pubspec.yaml.
+      - name: Generate Android project
+        run: |
+          flutter create --platforms=android --project-name appiano --org com.appiano .
+          rm -rf test
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Publish APK to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v0.1.${{ github.run_number }}"
+          gh release create "$TAG" build/app/outputs/flutter-apk/app-release.apk \
+            --target "${{ github.sha }}" \
+            --title "Appiano $TAG" \
+            --notes "APK build tự động từ commit ${{ github.sha }}"
