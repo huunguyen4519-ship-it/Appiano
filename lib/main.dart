@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
 
 const int baseNote = 60; // C4
@@ -8,6 +9,10 @@ const String sampleAsset = 'assets/piano_c4.wav';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
   await SoLoud.instance.init();
   final source = await SoLoud.instance.loadAsset(sampleAsset);
   runApp(AppianoApp(source: source));
@@ -118,8 +123,8 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = min(constraints.maxWidth, 700.0);
-        final height = width * 0.5;
+        final width = constraints.maxWidth;
+        final height = constraints.maxHeight;
         final whiteW = width / _whiteNotes.length;
         final blackW = whiteW * 0.6;
         final blackH = height * 0.62;
