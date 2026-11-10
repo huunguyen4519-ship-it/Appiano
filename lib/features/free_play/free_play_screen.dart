@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_feedback.dart';
 import '../../core/audio.dart';
 import '../../core/orientation.dart';
 import '../../theory/chords.dart';
@@ -62,15 +63,19 @@ class _FreePlayScreenState extends State<FreePlayScreen> {
             AppTopBar(
               title: const Text('Chơi đàn'),
               actions: [
-                PopupMenuButton<PlayMode>(
-                  tooltip: 'Chế độ bàn phím',
-                  icon: const Icon(Icons.tune),
-                  initialValue: _mode,
-                  onSelected: (m) => setState(() => _mode = m),
-                  itemBuilder: (_) => [
-                    for (final m in PlayMode.values)
-                      PopupMenuItem(value: m, child: Text(m.label)),
-                  ],
+                IconButton.filledTonal(
+                  tooltip: 'Chơi hợp âm',
+                  isSelected: _mode == PlayMode.chords,
+                  icon: const Icon(Icons.library_music_outlined),
+                  selectedIcon: const Icon(Icons.library_music),
+                  onPressed: () {
+                    AppFeedback.tap();
+                    setState(() {
+                      _mode = _mode == PlayMode.chords
+                          ? PlayMode.single
+                          : PlayMode.chords;
+                    });
+                  },
                 ),
                 IconButton(
                   tooltip: 'Cài đặt',
