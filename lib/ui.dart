@@ -1,0 +1,175 @@
+import 'dart:ui' show ImageFilter;
+
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Các màu chủ đề gợi ý. Người dùng cũng có thể kéo thanh để chọn màu khác.
+const List<Color> accentPresets = [
+  Color(0xFF7C9CFF),
+  Color(0xFF9B7CFF),
+  Color(0xFFFF7CB6),
+  Color(0xFFFF9F7C),
+  Color(0xFF6BE3B5),
+  Color(0xFF5EE7FF),
+  Color(0xFFFFD86B),
+];
+
+/// Giữ màu chủ đề hiện tại và lưu lại trên máy.
+class AppThemeController {
+  AppThemeController._();
+  static final AppThemeController instance = AppThemeController._();
+  static const _key = 'accent_argb';
+
+  final ValueNotifier<Color> accent = ValueNotifier<Color>(accentPresets.first);
+
+  Future<void> load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final value = prefs.getInt(_key);
+      if (value != null) accent.value = Color(value);
+    } catch (_) {}
+  }
+
+  Future<void> setAccent(Color color) async {
+    accent.value = color;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_key, color.toARGB32());
+    } catch (_) {}
+  }
+}
+
+ThemeData buildTheme(Color accent) {
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: accent,
+      brightness: Brightness.dark,
+    ),
+    scaffoldBackgroundColor: Colors.transparent,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+    ),
+  );
+}
+
+/// Nền tối có hai quầng màu mờ theo màu chủ đề, tạo cảm giác chất lỏng.
+class LiquidBackground extends StatelessWidget {
+  final Widget child;
+  const LiquidBackground({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<Color>(
+      valueListenable: AppThemeController.instance.accent,
+      builder: (context, accent, _) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color.lerp(const Color(0xFF0B0B12), accent, 0.22)!,
+                      const Color(0xFF060609),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: -140,
+              left: -90,
+              child: _Blob(color: accent, size: 340),
+            ),
+            Positioned(
+              bottom: -160,
+              right: -80,
+              child: _Blob(
+                color: Color.lerp(accent, Colors.white, 0.2)!,
+                size: 380,
+              ),
+            ),
+            Positioned.fill(child: child),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _Blob extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _Blob({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            color.withValues(alpha: 0.5),
+            color.withValues(alpha: 0.0),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Khung kính mờ: nền trong suốt, viền sáng nhẹ, làm mờ phía sau.
+class GlassBox extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final double radius;
+  final VoidCallback? onTap;
+
+  const GlassBox({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(12),
+    this.radius = 22,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = BorderRadius.circular(radius);
+    final body = ClipRRect(
+      borderRadius: shape,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: shape,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.20),
+                Colors.white.withValues(alpha: 0.05),
+              ],
+            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+          ),
+          child: Padding(padding: padding, child: child),
+        ),
+      ),
+    );
+    if (onTap == null) return body;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: body,
+    );
+  }
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'audio.dart';
+import 'ui.dart';
 
 /// Bàn phím 2 quãng tám từ C4 (14 phím trắng), lấp đầy vùng được cấp.
 class PianoKeyboard extends StatefulWidget {
@@ -75,107 +76,140 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
     setState(() => _pressed.remove(midi));
   }
 
-  Color _keyColor(int midi, Color base, Color highlightColor) {
-    if (widget.wrong == midi) return const Color(0xFFF28B82);
-    if (_pressed.contains(midi)) return const Color(0xFFBFD8FF);
-    if (widget.highlight.contains(midi)) return highlightColor;
-    return base;
+  List<Color> _pressedColors(Color accent, bool black) {
+    return black
+        ? [Color.lerp(accent, Colors.white, 0.25)!, accent]
+        : [Color.lerp(accent, Colors.white, 0.6)!, accent];
+  }
+
+  List<Color> _whiteColors(int midi, Color accent) {
+    if (widget.wrong == midi) {
+      return const [Color(0xFFFFB4AB), Color(0xFFE2574C)];
+    }
+    if (_pressed.contains(midi)) return _pressedColors(accent, false);
+    if (widget.highlight.contains(midi)) {
+      return const [Color(0xFFCFFAC4), Color(0xFF6BD16A)];
+    }
+    return const [Color(0xFFFFFFFF), Color(0xFFE6E6EE)];
+  }
+
+  List<Color> _blackColors(int midi, Color accent) {
+    if (widget.wrong == midi) {
+      return const [Color(0xFFFF8A80), Color(0xFFB71C1C)];
+    }
+    if (_pressed.contains(midi)) return _pressedColors(accent, true);
+    if (widget.highlight.contains(midi)) {
+      return const [Color(0xFF81C784), Color(0xFF1B5E20)];
+    }
+    return const [Color(0xFF3A3A46), Color(0xFF0A0A0E)];
   }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final height = constraints.maxHeight;
-        final whiteW = width / _whiteNotes.length;
-        final blackW = whiteW * 0.6;
-        final blackH = height * 0.62;
+    return ValueListenableBuilder<Color>(
+      valueListenable: AppThemeController.instance.accent,
+      builder: (context, accent, _) {
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final height = constraints.maxHeight;
+            final whiteW = width / _whiteNotes.length;
+            final blackW = whiteW * 0.6;
+            final blackH = height * 0.62;
 
-        void down(PointerDownEvent e) {
-          final n = _noteAt(e.localPosition, whiteW, blackW, blackH);
-          if (n == null) return;
-          _pointerNote[e.pointer] = n;
-          _press(n);
-        }
+            void down(PointerDownEvent e) {
+              final n = _noteAt(e.localPosition, whiteW, blackW, blackH);
+              if (n == null) return;
+              _pointerNote[e.pointer] = n;
+              _press(n);
+            }
 
-        void move(PointerMoveEvent e) {
-          final old = _pointerNote[e.pointer];
-          final n = _noteAt(e.localPosition, whiteW, blackW, blackH);
-          if (n == null || n == old) return;
-          if (old != null) _release(old);
-          _pointerNote[e.pointer] = n;
-          _press(n);
-        }
+            void move(PointerMoveEvent e) {
+              final old = _pointerNote[e.pointer];
+              final n = _noteAt(e.localPosition, whiteW, blackW, blackH);
+              if (n == null || n == old) return;
+              if (old != null) _release(old);
+              _pointerNote[e.pointer] = n;
+              _press(n);
+            }
 
-        void up(PointerEvent e) {
-          final old = _pointerNote.remove(e.pointer);
-          if (old != null) _release(old);
-        }
+            void up(PointerEvent e) {
+              final old = _pointerNote.remove(e.pointer);
+              if (old != null) _release(old);
+            }
 
-        return Listener(
-          onPointerDown: down,
-          onPointerMove: move,
-          onPointerUp: up,
-          onPointerCancel: up,
-          child: Stack(
-            children: [
-              for (int i = 0; i < _whiteNotes.length; i++)
-                Positioned(
-                  left: i * whiteW,
-                  top: 0,
-                  width: whiteW,
-                  height: height,
-                  child: _key(
-                    color: _keyColor(
-                      _whiteNotes[i],
-                      const Color(0xFFF7F7F5),
-                      const Color(0xFFA8E6A1),
+            return Listener(
+              onPointerDown: down,
+              onPointerMove: move,
+              onPointerUp: up,
+              onPointerCancel: up,
+              child: Stack(
+                children: [
+                  for (int i = 0; i < _whiteNotes.length; i++)
+                    Positioned(
+                      left: i * whiteW + 1,
+                      top: 0,
+                      width: whiteW - 2,
+                      height: height,
+                      child: _key(
+                        colors: _whiteColors(_whiteNotes[i], accent),
+                        black: false,
+                        radius: 8,
+                        label: widget.labels[_whiteNotes[i]],
+                        labelColor: Colors.black87,
+                      ),
                     ),
-                    borderColor: const Color(0xFF9A9A9A),
-                    label: widget.labels[_whiteNotes[i]],
-                    labelColor: Colors.black87,
-                  ),
-                ),
-              for (final b in _blackNotes)
-                Positioned(
-                  left: (b.leftWhite + 1) * whiteW - blackW / 2,
-                  top: 0,
-                  width: blackW,
-                  height: blackH,
-                  child: _key(
-                    color: _keyColor(
-                      b.midi,
-                      const Color(0xFF1B1B1F),
-                      const Color(0xFF2E7D32),
+                  for (final b in _blackNotes)
+                    Positioned(
+                      left: (b.leftWhite + 1) * whiteW - blackW / 2,
+                      top: 0,
+                      width: blackW,
+                      height: blackH,
+                      child: _key(
+                        colors: _blackColors(b.midi, accent),
+                        black: true,
+                        radius: 5,
+                        label: widget.labels[b.midi],
+                        labelColor: Colors.white,
+                      ),
                     ),
-                    borderColor: Colors.black,
-                    radius: 4,
-                    label: widget.labels[b.midi],
-                    labelColor: Colors.white,
-                  ),
-                ),
-            ],
-          ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
   }
 
   Widget _key({
-    required Color color,
-    required Color borderColor,
-    double radius = 6,
+    required List<Color> colors,
+    required bool black,
+    required double radius,
     String? label,
-    Color labelColor = Colors.black87,
+    required Color labelColor,
   }) {
     return Container(
       alignment: Alignment.bottomCenter,
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: color,
-        border: Border.all(color: borderColor, width: 1),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: colors,
+        ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(radius)),
+        border: Border.all(
+          color: black ? Colors.black : const Color(0xFFB0B0BC),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: black ? 0.7 : 0.3),
+            blurRadius: black ? 8 : 4,
+            offset: Offset(0, black ? 5 : 2),
+          ),
+        ],
       ),
       child: label == null
           ? null
@@ -183,7 +217,7 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
               label,
               style: TextStyle(
                 color: labelColor,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
                 fontSize: 16,
               ),
             ),

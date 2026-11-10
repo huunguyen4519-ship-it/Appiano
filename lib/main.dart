@@ -7,6 +7,8 @@ import 'audio.dart';
 import 'keyboard.dart';
 import 'lessons.dart';
 import 'progress.dart';
+import 'settings.dart';
+import 'ui.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +16,7 @@ Future<void> main() async {
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
+  await AppThemeController.instance.load();
   await PianoAudio.instance.load();
   runApp(const AppianoApp());
 }
@@ -23,11 +26,18 @@ class AppianoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Appiano',
-      theme: ThemeData.dark(useMaterial3: true),
-      home: const HomeScreen(),
+    return ValueListenableBuilder<Color>(
+      valueListenable: AppThemeController.instance.accent,
+      builder: (context, accent, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Appiano',
+          theme: buildTheme(accent),
+          builder: (context, child) =>
+              LiquidBackground(child: child ?? const SizedBox.shrink()),
+          home: const HomeScreen(),
+        );
+      },
     );
   }
 }
@@ -61,37 +71,53 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Appiano')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          for (final lesson in lessons)
-            Card(
-              child: ListTile(
-                leading: Icon(
-                  (_stars[lesson.id] ?? 0) > 0
-                      ? Icons.check_circle
-                      : Icons.music_note,
-                ),
-                title: Text(lesson.title),
-                subtitle: Text(lesson.description),
-                trailing: Text(
-                  starsText(_stars[lesson.id] ?? 0),
-                  style: const TextStyle(fontSize: 18, color: Colors.amber),
-                ),
-                onTap: () => _open(PracticeScreen(lesson: lesson)),
-              ),
-            ),
-          const Divider(height: 32),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.piano),
-              title: const Text('Chơi tự do'),
-              subtitle: const Text('Bàn phím, không có bài'),
-              onTap: () => _open(const FreePlayScreen()),
-            ),
+      appBar: AppBar(
+        title: const Text('Appiano'),
+        actions: [
+          IconButton(
+            tooltip: 'Cài đặt',
+            icon: const Icon(Icons.palette_outlined),
+            onPressed: () => _open(const SettingsScreen()),
           ),
         ],
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            for (final lesson in lessons)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: GlassBox(
+                  padding: EdgeInsets.zero,
+                  onTap: () => _open(PracticeScreen(lesson: lesson)),
+                  child: ListTile(
+                    leading: Icon(
+                      (_stars[lesson.id] ?? 0) > 0
+                          ? Icons.check_circle
+                          : Icons.music_note,
+                    ),
+                    title: Text(lesson.title),
+                    subtitle: Text(lesson.description),
+                    trailing: Text(
+                      starsText(_stars[lesson.id] ?? 0),
+                      style: const TextStyle(fontSize: 18, color: Colors.amber),
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 8),
+            GlassBox(
+              padding: EdgeInsets.zero,
+              onTap: () => _open(const FreePlayScreen()),
+              child: const ListTile(
+                leading: Icon(Icons.piano),
+                title: Text('Chơi tự do'),
+                subtitle: Text('Bàn phím, không có bài'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -106,8 +132,11 @@ class FreePlayScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Chơi tự do')),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: PianoKeyboard(onNote: (_) {}),
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+          child: GlassBox(
+            padding: const EdgeInsets.all(8),
+            child: PianoKeyboard(onNote: (_) {}),
+          ),
         ),
       ),
     );
@@ -213,33 +242,39 @@ class _PracticeScreenState extends State<PracticeScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Column(
-                children: [
-                  Text(
-                    statusText,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  LinearProgressIndicator(value: _index / total),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: PianoKeyboard(
-                  onNote: _onNote,
-                  highlight: _finished ? const {} : {_target},
-                  labels: _finished ? const {} : {_target: '$_finger'},
-                  wrong: _wrong,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+          child: Column(
+            children: [
+              GlassBox(
+                child: Column(
+                  children: [
+                    Text(
+                      statusText,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: _index / total,
+                      minHeight: 6,
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Expanded(
+                child: GlassBox(
+                  padding: const EdgeInsets.all(8),
+                  child: PianoKeyboard(
+                    onNote: _onNote,
+                    highlight: _finished ? const {} : {_target},
+                    labels: _finished ? const {} : {_target: '$_finger'},
+                    wrong: _wrong,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
