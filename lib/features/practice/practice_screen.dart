@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_feedback.dart';
 import '../../core/orientation.dart';
 import '../../data/progress_store.dart';
-import '../../theory/lessons.dart';
+import '../../theory/lesson.dart';
 import '../../theory/notes.dart';
 import '../../widgets/app_top_bar.dart';
 import '../keyboard/piano_keyboard.dart';
@@ -21,6 +21,7 @@ class PracticeScreen extends StatefulWidget {
 
 class _PracticeScreenState extends State<PracticeScreen> {
   late final PracticeSession _session = PracticeSession(widget.lesson);
+  int? _wrong;
 
   @override
   void initState() {
@@ -28,7 +29,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
     // Bài tập có bàn phím, dùng chiều ngang như màn chơi đàn.
     lockOrientation(kLandscape);
   }
-  int? _wrong;
 
   void _onNote(int midi) {
     final result = _session.press(midi);
@@ -51,7 +51,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
   void _finish() {
     AppFeedback.done();
     final stars = _session.stars;
-    setState(() {});
     unawaited(ProgressStore.saveStars(widget.lesson.id, stars));
     showDialog<void>(
       context: context,
@@ -82,20 +81,24 @@ class _PracticeScreenState extends State<PracticeScreen> {
     });
   }
 
+  String _statusText() {
+    final title = widget.lesson.title;
+    if (_session.finished) {
+      return '$title · Xong, sai ${_session.mistakes} lần';
+    }
+    final names = (_session.targets.toList()..sort()).map(noteName).join(' + ');
+    return '$title · $names · ${_session.index + 1}/${_session.total}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final finished = _session.finished;
-    final statusText = finished
-        ? '${widget.lesson.title} · Xong, sai ${_session.mistakes} lần'
-        : '${widget.lesson.title} · ${noteName(_session.target)} · '
-            'ngón ${_session.finger} · ${_session.index + 1}/${_session.total}';
-
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             AppTopBar(
-              title: Text(statusText, overflow: TextOverflow.ellipsis),
+              title: Text(_statusText(), overflow: TextOverflow.ellipsis),
               actions: [
                 IconButton(
                   tooltip: 'Làm lại',
@@ -111,10 +114,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
             Expanded(
               child: PianoKeyboard(
                 onNote: _onNote,
-                highlight: finished ? const {} : {_session.target},
+                highlight: finished ? const <int>{} : _session.targets,
                 labels: finished
-                    ? const {}
-                    : {_session.target: '${_session.finger}'},
+                    ? const <int, String>{}
+                    : _session.fingerLabels,
                 wrong: _wrong,
               ),
             ),

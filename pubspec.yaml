@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   flutter_soloud: ^3.0.0
   shared_preferences: ^2.3.2 # kiểm tra phiên bản mới nhất trên pub.dev
+  file_picker: ^8.1.2
 
 dev_dependencies:
   flutter_test:

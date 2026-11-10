@@ -24,6 +24,9 @@ class SettingsStore {
   static const _soundKey = 'ui_sounds_on';
   static const _blurKey = 'blur_on';
 
+  /// Tên 5 dải tần của bộ chỉnh âm.
+  static const List<String> eqLabels = ['60 Hz', '250 Hz', '1 kHz', '4 kHz', '12 kHz'];
+
   /// Số phím trắng hiển thị cùng lúc.
   final ValueNotifier<int> visibleWhites = ValueNotifier<int>(10);
 
@@ -40,6 +43,10 @@ class SettingsStore {
   /// Hiệu ứng kính mờ. Tắt thì khung kính đặc hơn, máy yếu sẽ mượt hơn khi chuyển màn.
   final ValueNotifier<bool> blurOn = ValueNotifier<bool>(true);
 
+  /// Độ tăng giảm (dB) của 5 dải tần, từ -12 đến +12.
+  final List<ValueNotifier<double>> eqGains =
+      List.generate(5, (_) => ValueNotifier<double>(0));
+
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -52,6 +59,9 @@ class SettingsStore {
       haptics.value = prefs.getBool(_hapticKey) ?? true;
       uiSounds.value = prefs.getBool(_soundKey) ?? true;
       blurOn.value = prefs.getBool(_blurKey) ?? true;
+      for (var i = 0; i < eqGains.length; i++) {
+        eqGains[i].value = prefs.getDouble('eq_$i') ?? 0;
+      }
     } catch (_) {}
   }
 
@@ -78,6 +88,17 @@ class SettingsStore {
   Future<void> setBlur(bool on) async {
     blurOn.value = on;
     await _write((p) => p.setBool(_blurKey, on));
+  }
+
+  Future<void> setEqGain(int band, double db) async {
+    eqGains[band].value = db;
+    await _write((p) => p.setDouble('eq_$band', db));
+  }
+
+  Future<void> resetEq() async {
+    for (var i = 0; i < eqGains.length; i++) {
+      await setEqGain(i, 0);
+    }
   }
 
   Future<void> _write(Future<bool> Function(SharedPreferences) op) async {
