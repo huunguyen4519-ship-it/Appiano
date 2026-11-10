@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/app_feedback.dart';
+import '../../core/orientation.dart';
 import '../../data/progress_store.dart';
 import '../../theory/lessons.dart';
 import '../../theory/notes.dart';
@@ -20,6 +21,13 @@ class PracticeScreen extends StatefulWidget {
 
 class _PracticeScreenState extends State<PracticeScreen> {
   late final PracticeSession _session = PracticeSession(widget.lesson);
+
+  @override
+  void initState() {
+    super.initState();
+    // Bài tập có bàn phím, dùng chiều ngang như màn chơi đàn.
+    lockOrientation(kLandscape);
+  }
   int? _wrong;
 
   void _onNote(int midi) {

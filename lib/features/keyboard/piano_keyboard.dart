@@ -68,6 +68,9 @@ class _PianoKeyboardState extends State<PianoKeyboard>
 
   final Map<int, int> _pointerNote = {};
 
+  // Mã âm thanh của từng nốt đang giữ, để tắt đúng nốt khi nhấc tay.
+  final Map<int, int> _noteTokens = {};
+
   // Trạng thái phím đang bấm nằm riêng, để chỉ phần phím được vẽ lại khi bấm.
   final ValueNotifier<Set<int>> _pressed = ValueNotifier<Set<int>>({});
 
@@ -99,6 +102,9 @@ class _PianoKeyboardState extends State<PianoKeyboard>
   void dispose() {
     _scroll.dispose();
     _startF.dispose();
+    for (final t in _noteTokens.values) {
+      PianoAudio.instance.noteOff(t);
+    }
     _pressed.dispose();
     super.dispose();
   }
@@ -140,13 +146,15 @@ class _PianoKeyboardState extends State<PianoKeyboard>
 
   void _press(int midi) {
     _pressed.value = {..._pressed.value, midi};
-    PianoAudio.instance.playNote(midi);
+    _noteTokens[midi] = PianoAudio.instance.noteOn(midi);
     AppFeedback.key();
     widget.onNote(midi);
   }
 
   void _release(int midi) {
     _pressed.value = {..._pressed.value}..remove(midi);
+    final token = _noteTokens.remove(midi);
+    if (token != null) PianoAudio.instance.noteOff(token);
   }
 
   @override

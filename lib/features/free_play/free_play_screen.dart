@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../../core/audio.dart';
+import '../../core/orientation.dart';
 import '../../theory/chords.dart';
 import '../../widgets/app_route.dart';
 import '../../widgets/app_top_bar.dart';
@@ -20,23 +19,38 @@ class FreePlayScreen extends StatefulWidget {
 class _FreePlayScreenState extends State<FreePlayScreen> {
   PlayMode _mode = PlayMode.single;
   Set<int> _chordKeys = {};
-  Timer? _chordTimer;
+  List<int> _chordTokens = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Bàn phím đầy đủ cần chiều ngang.
+    lockOrientation(kLandscape);
+  }
 
   @override
   void dispose() {
-    _chordTimer?.cancel();
+    _releaseChord();
     super.dispose();
   }
 
-  void _playChord(Chord chord) {
-    for (final n in chord.notes) {
-      PianoAudio.instance.playNote(n);
+  void _releaseChord() {
+    for (final t in _chordTokens) {
+      PianoAudio.instance.noteOff(t);
     }
-    _chordTimer?.cancel();
+    _chordTokens = [];
+  }
+
+  // Nhấn giữ hợp âm: các nốt ngân cho tới khi nhấc tay.
+  void _chordDown(Chord chord) {
+    _releaseChord();
+    _chordTokens = [for (final n in chord.notes) PianoAudio.instance.noteOn(n)];
     setState(() => _chordKeys = chord.notes.toSet());
-    _chordTimer = Timer(const Duration(milliseconds: 900), () {
-      if (mounted) setState(() => _chordKeys = {});
-    });
+  }
+
+  void _chordUp() {
+    _releaseChord();
+    setState(() => _chordKeys = {});
   }
 
   @override
@@ -68,7 +82,8 @@ class _FreePlayScreenState extends State<FreePlayScreen> {
                 ),
               ],
             ),
-            if (_mode == PlayMode.chords) ChordBar(onChord: _playChord),
+            if (_mode == PlayMode.chords)
+              ChordBar(onDown: _chordDown, onUp: _chordUp),
             Expanded(
               child: PianoKeyboard(onNote: (_) {}, highlight: _chordKeys),
             ),

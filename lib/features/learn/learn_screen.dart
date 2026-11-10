@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_feedback.dart';
+import '../../core/orientation.dart';
 import '../../data/progress_store.dart';
 import '../../theory/lessons.dart';
 import '../../theory/notes.dart';
@@ -23,6 +24,7 @@ class _LearnScreenState extends State<LearnScreen> {
   @override
   void initState() {
     super.initState();
+    lockOrientation(kPortrait);
     _refresh();
   }
 
@@ -37,6 +39,7 @@ class _LearnScreenState extends State<LearnScreen> {
       context,
       appRoute<void>(PracticeScreen(lesson: lesson)),
     );
+    lockOrientation(kPortrait);
     _refresh();
   }
 

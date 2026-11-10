@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app_feedback.dart';
+import '../../core/orientation.dart';
 import '../../data/progress_store.dart';
 import '../../theory/lessons.dart';
 import '../../widgets/app_route.dart';
@@ -23,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    lockOrientation(kPortrait);
     _refresh();
   }
 
@@ -35,6 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _open(Widget page) async {
     AppFeedback.tap();
     await Navigator.push(context, appRoute<void>(page));
+    // Màn con có thể đã đổi hướng, nên đưa màn chính về dọc.
+    lockOrientation(kPortrait);
     _refresh();
   }
 

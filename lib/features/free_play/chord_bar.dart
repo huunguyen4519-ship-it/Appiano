@@ -4,10 +4,12 @@ import '../../core/app_feedback.dart';
 import '../../theory/chords.dart';
 import '../../widgets/glass_box.dart';
 
-/// Dải nút kính hợp âm. Bấm một nút sẽ phát các nốt của hợp âm cùng lúc.
+/// Dải nút kính hợp âm. Nhấn giữ thì hợp âm ngân, nhấc tay thì hợp âm tắt dần.
 class ChordBar extends StatelessWidget {
-  final ValueChanged<Chord> onChord;
-  const ChordBar({super.key, required this.onChord});
+  final ValueChanged<Chord> onDown;
+  final VoidCallback onUp;
+
+  const ChordBar({super.key, required this.onDown, required this.onUp});
 
   @override
   Widget build(BuildContext context) {
@@ -20,19 +22,23 @@ class ChordBar extends StatelessWidget {
           for (final c in chordList)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
-              child: GlassBox(
-                radius: 20,
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                onTap: () {
+              child: Listener(
+                onPointerDown: (_) {
                   AppFeedback.tap();
-                  onChord(c);
+                  onDown(c);
                 },
-                child: Center(
-                  child: Text(
-                    c.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
+                onPointerUp: (_) => onUp(),
+                onPointerCancel: (_) => onUp(),
+                child: GlassBox(
+                  radius: 20,
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: Center(
+                    child: Text(
+                      c.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
                 ),

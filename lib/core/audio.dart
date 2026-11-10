@@ -24,8 +24,18 @@ String _samplePath(int midi) {
   return 'assets/piano/$name${midi ~/ 12 - 1}.ogg';
 }
 
+/// Thời gian mờ dần sau khi thả phím.
+/// Bấm nhanh rồi thả thì nốt tắt sớm; giữ phím thì nốt ngân cho tới khi thả.
+const Duration _releaseFade = Duration(milliseconds: 300);
+
+/// Một nốt đang phát, gắn với một lần nhấn phím.
+class _Voice {
+  SoundHandle? handle;
+  bool released = false;
+}
+
 /// Âm thanh duy nhất của app: piano và các âm giao diện.
-/// Mọi tầng khác chỉ gọi [playNote] hoặc [playUi], không đụng vào thư viện âm thanh.
+/// Mọi tầng khác chỉ gọi [noteOn], [noteOff] hoặc [playUi], không đụng vào thư viện âm thanh.
 class PianoAudio {
   PianoAudio._();
   static final PianoAudio instance = PianoAudio._();
@@ -39,6 +49,9 @@ class PianoAudio {
   AudioSource? _fallback;
 
   final Map<String, AudioSource> _ui = {};
+
+  final Map<int, _Voice> _voices = {};
+  int _nextId = 0;
 
   Future<void> load() async {
     await SoLoud.instance.init();
@@ -69,16 +82,39 @@ class PianoAudio {
     return best;
   }
 
-  /// Phát một nốt piano: lấy mẫu gần nhất rồi đổi tốc độ nhẹ để đúng cao độ.
-  void playNote(int midi) {
+  /// Bắt đầu một nốt khi chạm xuống. Trả về mã để gọi [noteOff] khi nhấc tay.
+  int noteOn(int midi) {
+    final id = ++_nextId;
+    final voice = _Voice();
+    _voices[id] = voice;
+
     final near = _nearestLoaded(midi);
     final AudioSource? source = near != null ? _samples[near] : _fallback;
-    if (source == null) return;
+    if (source == null) return id;
     final base = near ?? sampleBaseNote;
     final speed = pow(2, (midi - base) / 12).toDouble();
+
     SoLoud.instance.play(source).then((handle) {
+      voice.handle = handle;
       SoLoud.instance.setRelativePlaySpeed(handle, speed);
+      // Nếu tay đã nhấc trước khi âm bắt đầu phát thì tắt luôn.
+      if (voice.released) _fadeAndStop(handle);
     });
+    return id;
+  }
+
+  /// Nhấc tay khỏi nốt: nốt mờ dần rồi tắt.
+  void noteOff(int id) {
+    final voice = _voices.remove(id);
+    if (voice == null) return;
+    voice.released = true;
+    final handle = voice.handle;
+    if (handle != null) _fadeAndStop(handle);
+  }
+
+  void _fadeAndStop(SoundHandle handle) {
+    SoLoud.instance.fadeVolume(handle, 0, _releaseFade);
+    Future<void>.delayed(_releaseFade, () => SoLoud.instance.stop(handle));
   }
 
   /// Phát âm giao diện theo tên: click, correct, wrong, done.
