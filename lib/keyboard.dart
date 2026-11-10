@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'audio.dart';
+import 'settings_store.dart';
 import 'ui.dart';
 
 /// Bàn phím có thể trượt qua nhiều quãng tám.
@@ -15,7 +16,7 @@ class PianoKeyboard extends StatefulWidget {
   /// Nốt vừa bấm sai, tô đỏ thoáng qua.
   final int? wrong;
 
-  /// Chữ ghi trên phím, ví dụ số ngón tay.
+  /// Chữ ghi đè lên phím, ví dụ số ngón tay. Ưu tiên hơn kiểu tên nốt.
   final Map<int, String> labels;
 
   const PianoKeyboard({
@@ -32,7 +33,6 @@ class PianoKeyboard extends StatefulWidget {
 
 const int _lowMidi = 36; // C2
 const int _highMidi = 96; // C7
-const int visibleWhites = 10; // số phím trắng hiển thị cùng lúc, để phím to dễ bấm
 const int _octaveStep = 7;
 const Set<int> _whiteSemitones = {0, 2, 4, 5, 7, 9, 11};
 
@@ -56,6 +56,9 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
   // Tách riêng trạng thái phím đang bấm để chỉ phần phím được vẽ lại, không dựng lại cả widget.
   final ValueNotifier<Set<int>> _pressed = ValueNotifier<Set<int>>({});
 
+  int get _visible => SettingsStore.instance.visibleWhites.value;
+  double get _maxStart => (_whites.length - _visible).toDouble();
+
   @override
   void initState() {
     super.initState();
@@ -69,8 +72,9 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
     if (widget.highlight.isEmpty) return;
     final idx = _whiteIndexOf(widget.highlight.first);
     if (idx < 0) return;
-    if (idx < _startF || idx >= _startF + visibleWhites) {
-      _startF = (idx - visibleWhites / 2).clamp(0.0, _maxStart).toDouble();
+    final visible = _visible;
+    if (idx < _startF || idx >= _startF + visible) {
+      _startF = (idx - visible / 2).clamp(0.0, _maxStart).toDouble();
     }
   }
 
@@ -79,8 +83,6 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
     _pressed.dispose();
     super.dispose();
   }
-
-  double get _maxStart => (_whites.length - visibleWhites).toDouble();
 
   void _setStart(double v) {
     setState(() => _startF = v.clamp(0.0, _maxStart).toDouble());
@@ -115,9 +117,19 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<Color>(
-      valueListenable: AppThemeController.instance.accent,
-      builder: (context, accent, _) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        AppThemeController.instance.accent,
+        SettingsStore.instance.visibleWhites,
+        SettingsStore.instance.labelMode,
+      ]),
+      builder: (context, _) {
+        final accent = AppThemeController.instance.accent.value;
+        final visible = _visible;
+        final mode = SettingsStore.instance.labelMode.value;
+        // Nếu vừa đổi số phím hiển thị, giữ vị trí cuộn trong giới hạn mới.
+        _startF = _startF.clamp(0.0, _maxStart).toDouble();
+
         return Column(
           children: [
             SizedBox(
@@ -135,7 +147,7 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
                     child: _Overview(
                       whites: _whites,
                       start: _startF,
-                      visible: visibleWhites,
+                      visible: visible,
                       accent: accent,
                       onChanged: _setStart,
                     ),
@@ -155,7 +167,7 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
                 builder: (context, constraints) {
                   final width = constraints.maxWidth;
                   final height = constraints.maxHeight;
-                  final whiteW = width / visibleWhites;
+                  final whiteW = width / visible;
                   final blackW = whiteW * 0.6;
                   final blackH = height * 0.62;
 
@@ -186,25 +198,26 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
                     onPointerUp: up,
                     onPointerCancel: up,
                     child: ValueListenableBuilder<Set<int>>(
-                        valueListenable: _pressed,
-                        builder: (context, pressed, _) {
-                          return SizedBox.expand(
-                            child: CustomPaint(
-                              painter: _KeysPainter(
-                                whites: _whites,
-                                blacks: _blacks,
-                                start: _startF,
-                                visible: visibleWhites,
-                                pressed: pressed,
-                                highlight: widget.highlight,
-                                wrong: widget.wrong,
-                                labels: widget.labels,
-                                accent: accent,
-                              ),
+                      valueListenable: _pressed,
+                      builder: (context, pressed, _) {
+                        return SizedBox.expand(
+                          child: CustomPaint(
+                            painter: _KeysPainter(
+                              whites: _whites,
+                              blacks: _blacks,
+                              start: _startF,
+                              visible: visible,
+                              pressed: pressed,
+                              highlight: widget.highlight,
+                              wrong: widget.wrong,
+                              labels: widget.labels,
+                              labelMode: mode,
+                              accent: accent,
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
+                    ),
                   );
                 },
               ),
@@ -226,6 +239,7 @@ class _KeysPainter extends CustomPainter {
   final Set<int> highlight;
   final int? wrong;
   final Map<int, String> labels;
+  final NoteLabelMode labelMode;
   final Color accent;
 
   _KeysPainter({
@@ -237,6 +251,7 @@ class _KeysPainter extends CustomPainter {
     required this.highlight,
     required this.wrong,
     required this.labels,
+    required this.labelMode,
     required this.accent,
   });
 
@@ -256,8 +271,9 @@ class _KeysPainter extends CustomPainter {
         _whiteColors(midi),
         black: false,
         radius: 10,
-        label: labels[midi],
+        label: labels[midi] ?? noteLabel(midi, labelMode),
         labelColor: Colors.black87,
+        fontSize: (whiteW * 0.26).clamp(8.0, 16.0).toDouble(),
       );
     }
 
@@ -270,8 +286,9 @@ class _KeysPainter extends CustomPainter {
         _blackColors(b.midi),
         black: true,
         radius: 6,
-        label: labels[b.midi],
+        label: labels[b.midi] ?? noteLabel(b.midi, labelMode),
         labelColor: Colors.white,
+        fontSize: (whiteW * 0.2).clamp(7.0, 12.0).toDouble(),
       );
     }
   }
@@ -308,6 +325,7 @@ class _KeysPainter extends CustomPainter {
     required double radius,
     String? label,
     required Color labelColor,
+    required double fontSize,
   }) {
     final rrect = RRect.fromRectAndCorners(
       rect,
@@ -350,14 +368,14 @@ class _KeysPainter extends CustomPainter {
           style: TextStyle(
             color: labelColor,
             fontWeight: FontWeight.w700,
-            fontSize: 16,
+            fontSize: fontSize,
           ),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(
         canvas,
-        Offset(rect.center.dx - tp.width / 2, rect.bottom - tp.height - 10),
+        Offset(rect.center.dx - tp.width / 2, rect.bottom - tp.height - 8),
       );
     }
   }

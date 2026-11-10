@@ -8,6 +8,7 @@ import 'keyboard.dart';
 import 'lessons.dart';
 import 'progress.dart';
 import 'settings.dart';
+import 'settings_store.dart';
 import 'ui.dart';
 
 Future<void> main() async {
@@ -19,6 +20,7 @@ Future<void> main() async {
   // Ẩn thanh trạng thái và thanh điều hướng, để phần chơi đàn chiếm toàn màn hình.
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   await AppThemeController.instance.load();
+  await SettingsStore.instance.load();
   await PianoAudio.instance.load();
   runApp(const AppianoApp());
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'settings_store.dart';
 import 'ui.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -7,13 +8,23 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final store = SettingsStore.instance;
     return Scaffold(
       appBar: AppBar(title: const Text('Cài đặt')),
       body: SafeArea(
-        child: ValueListenableBuilder<Color>(
-          valueListenable: AppThemeController.instance.accent,
-          builder: (context, accent, _) {
+        child: AnimatedBuilder(
+          animation: Listenable.merge([
+            AppThemeController.instance.accent,
+            store.visibleWhites,
+            store.labelMode,
+          ]),
+          builder: (context, _) {
+            final accent = AppThemeController.instance.accent.value;
+            final visible = store.visibleWhites.value;
+            final mode = store.labelMode.value;
             final hue = HSVColor.fromColor(accent).hue;
+            final theme = Theme.of(context);
+
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -22,10 +33,7 @@ class SettingsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Màu chủ đề',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                      Text('Màu chủ đề', style: theme.textTheme.titleMedium),
                       const SizedBox(height: 16),
                       Wrap(
                         spacing: 14,
@@ -39,10 +47,7 @@ class SettingsScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      Text(
-                        'Tùy chỉnh màu',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                      Text('Tùy chỉnh màu', style: theme.textTheme.titleMedium),
                       Slider(
                         value: hue,
                         min: 0,
@@ -51,6 +56,66 @@ class SettingsScreen extends StatelessWidget {
                         onChanged: (h) => AppThemeController.instance.setAccent(
                           HSVColor.fromAHSV(1, h, 0.6, 1).toColor(),
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                GlassBox(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Tên hiển thị trên phím',
+                          style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 12),
+                      SegmentedButton<NoteLabelMode>(
+                        showSelectedIcon: false,
+                        segments: const [
+                          ButtonSegment(
+                            value: NoteLabelMode.off,
+                            label: Text('Tắt'),
+                          ),
+                          ButtonSegment(
+                            value: NoteLabelMode.letters,
+                            label: Text('ABC'),
+                          ),
+                          ButtonSegment(
+                            value: NoteLabelMode.numbers,
+                            label: Text('123'),
+                          ),
+                          ButtonSegment(
+                            value: NoteLabelMode.solfege,
+                            label: Text('Đô Rê'),
+                          ),
+                        ],
+                        selected: {mode},
+                        onSelectionChanged: (s) =>
+                            store.setLabelMode(s.first),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                GlassBox(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Số phím hiển thị: $visible',
+                          style: theme.textTheme.titleMedium),
+                      Slider(
+                        value: visible.toDouble(),
+                        min: minVisibleWhites.toDouble(),
+                        max: maxVisibleWhites.toDouble(),
+                        divisions: maxVisibleWhites - minVisibleWhites,
+                        label: '$visible',
+                        activeColor: accent,
+                        onChanged: (v) => store.setVisibleWhites(v.round()),
+                      ),
+                      Text(
+                        'Ít phím thì phím to hơn, dễ bấm. Nhiều phím thì thấy được nhiều nốt hơn.',
+                        style: theme.textTheme.bodySmall,
                       ),
                     ],
                   ),
