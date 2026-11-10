@@ -2,7 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
-/// Thanh tiêu đề có nền mờ đậm. Nội dung cuộn bên dưới không đè lên chữ.
+/// Thanh tiêu đề kính mờ. Nội dung cuộn bên dưới bị làm mờ, không đè lên chữ.
 class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget title;
   final List<Widget> actions;
@@ -22,8 +22,15 @@ class GlassAppBar extends StatelessWidget implements PreferredSizeWidget {
       scrolledUnderElevation: 0,
       flexibleSpace: ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(color: Colors.black.withValues(alpha: 0.55)),
+          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.30),
+              border: Border(
+                bottom: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+              ),
+            ),
+          ),
         ),
       ),
     );

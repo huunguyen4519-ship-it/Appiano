@@ -151,6 +151,16 @@ class SettingsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                const SizedBox(height: 12),
+                GlassBox(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'Âm piano: Salamander Grand Piano, tác giả Alexander Holm, '
+                    'chỉnh âm Markus Fiedler, tái tạo kinwie. '
+                    'Giấy phép CC BY 3.0 (creativecommons.org/licenses/by/3.0).',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
               ],
             );
           },
