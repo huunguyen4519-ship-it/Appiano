@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Kiểu tên hiển thị trên phím.
-enum NoteLabelMode { off, letters, numbers, solfege }
+import '../theory/notation.dart';
 
 const int minVisibleWhites = 7;
 const int maxVisibleWhites = 24;
@@ -19,21 +18,25 @@ class SettingsStore {
   static final SettingsStore instance = SettingsStore._();
 
   static const _visibleKey = 'visible_whites';
-  static const _labelKey = 'label_mode';
+  static const _notationKey = 'notation_id';
+  static const _labelsKey = 'labels_visible';
   static const _hapticKey = 'haptics_on';
   static const _soundKey = 'ui_sounds_on';
 
   /// Số phím trắng hiển thị cùng lúc.
   final ValueNotifier<int> visibleWhites = ValueNotifier<int>(10);
 
-  /// Kiểu tên phím.
-  final ValueNotifier<NoteLabelMode> labelMode =
-      ValueNotifier<NoteLabelMode>(NoteLabelMode.letters);
+  /// Cách ký âm hiển thị trên phím.
+  final ValueNotifier<NoteNotation> notation =
+      ValueNotifier<NoteNotation>(notationChoices.first);
+
+  /// Có hiện nhãn trên phím không.
+  final ValueNotifier<bool> labelsVisible = ValueNotifier<bool>(true);
 
   /// Rung nhẹ khi chạm phím và khi làm đúng sai.
   final ValueNotifier<bool> haptics = ValueNotifier<bool>(true);
 
-  /// Âm thanh giao diện (click, đúng, sai, hoàn thành).
+  /// Âm thanh giao diện (click, sai, hoàn thành).
   final ValueNotifier<bool> uiSounds = ValueNotifier<bool>(true);
 
   Future<void> load() async {
@@ -41,10 +44,11 @@ class SettingsStore {
       final prefs = await SharedPreferences.getInstance();
       final v = prefs.getInt(_visibleKey);
       if (v != null) visibleWhites.value = _clampVisible(v);
-      final m = prefs.getInt(_labelKey);
-      if (m != null && m >= 0 && m < NoteLabelMode.values.length) {
-        labelMode.value = NoteLabelMode.values[m];
+      final id = prefs.getString(_notationKey);
+      for (final n in notationChoices) {
+        if (n.id == id) notation.value = n;
       }
+      labelsVisible.value = prefs.getBool(_labelsKey) ?? true;
       haptics.value = prefs.getBool(_hapticKey) ?? true;
       uiSounds.value = prefs.getBool(_soundKey) ?? true;
     } catch (_) {}
@@ -55,9 +59,14 @@ class SettingsStore {
     await _write((p) => p.setInt(_visibleKey, visibleWhites.value));
   }
 
-  Future<void> setLabelMode(NoteLabelMode mode) async {
-    labelMode.value = mode;
-    await _write((p) => p.setInt(_labelKey, mode.index));
+  Future<void> setNotation(NoteNotation value) async {
+    notation.value = value;
+    await _write((p) => p.setString(_notationKey, value.id));
+  }
+
+  Future<void> setLabelsVisible(bool on) async {
+    labelsVisible.value = on;
+    await _write((p) => p.setBool(_labelsKey, on));
   }
 
   Future<void> setHaptics(bool on) async {

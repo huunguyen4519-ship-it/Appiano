@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'keyboard_palette.dart';
+
 /// Nhãn "Thấp" hoặc "Cao" ở hai đầu thanh tổng quan.
 class EdgeLabel extends StatelessWidget {
   final String text;
@@ -12,18 +14,23 @@ class EdgeLabel extends StatelessWidget {
       child: Text(
         text,
         textAlign: text == 'Thấp' ? TextAlign.left : TextAlign.right,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: Colors.white.withValues(alpha: 0.6),
+        ),
       ),
     );
   }
 }
 
-/// Thanh tổng quan: toàn bộ phím trắng thu nhỏ, nền chuyển từ xanh (thấp) sang cam (cao).
-/// Khung sáng là vùng đang hiển thị. Kéo hoặc chạm để chuyển vùng.
+/// Thanh tổng quan đơn sắc: các phím trắng thu nhỏ màu xám.
+/// Khung đang xem được làm sáng để nổi bật. Kéo hoặc chạm để chuyển vùng.
 class KeyboardOverview extends StatelessWidget {
   final List<int> whites;
   final double start;
   final int visible;
+  final KeyboardPalette palette;
   final Color accent;
   final ValueChanged<double> onChanged;
 
@@ -32,6 +39,7 @@ class KeyboardOverview extends StatelessWidget {
     required this.whites,
     required this.start,
     required this.visible,
+    required this.palette,
     required this.accent,
     required this.onChanged,
   });
@@ -50,13 +58,7 @@ class KeyboardOverview extends StatelessWidget {
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF3B5BDB),
-                        Color(0xFF7B5EA7),
-                        Color(0xFFF08C3A),
-                      ],
-                    ),
+                    color: palette.overviewTrack,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -69,7 +71,7 @@ class KeyboardOverview extends StatelessWidget {
                   width: unit - 1,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: palette.overviewKey,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -81,8 +83,11 @@ class KeyboardOverview extends StatelessWidget {
                 width: visible * unit,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.25),
-                    border: Border.all(color: accent, width: 2),
+                    color: palette.overviewWindow,
+                    border: Border.all(
+                      color: palette.overviewWindowBorder ?? accent,
+                      width: 1.5,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
