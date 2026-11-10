@@ -68,7 +68,7 @@ String? noteLabel(int midi, NoteLabelMode mode) {
   final i = midi % 12;
   return switch (mode) {
     NoteLabelMode.off => null,
-    NoteLabelMode.letters => _letterNames[i],
+    NoteLabelMode.letters => '${_letterNames[i]}${midi ~/ 12 - 1}',
     NoteLabelMode.numbers => _numberNames[i],
     NoteLabelMode.solfege => _solfegeNames[i],
   };

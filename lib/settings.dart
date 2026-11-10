@@ -78,7 +78,7 @@ class SettingsScreen extends StatelessWidget {
                           ),
                           ButtonSegment(
                             value: NoteLabelMode.letters,
-                            label: Text('ABC'),
+                            label: Text('C4'),
                           ),
                           ButtonSegment(
                             value: NoteLabelMode.numbers,
