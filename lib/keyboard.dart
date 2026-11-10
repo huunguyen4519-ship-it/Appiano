@@ -150,7 +150,6 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
                 ],
               ),
             ),
-            const SizedBox(height: 4),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -186,9 +185,7 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
                     onPointerMove: move,
                     onPointerUp: up,
                     onPointerCancel: up,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: ValueListenableBuilder<Set<int>>(
+                    child: ValueListenableBuilder<Set<int>>(
                         valueListenable: _pressed,
                         builder: (context, pressed, _) {
                           return SizedBox.expand(
@@ -208,7 +205,6 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
                           );
                         },
                       ),
-                    ),
                   );
                 },
               ),

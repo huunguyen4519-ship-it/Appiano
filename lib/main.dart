@@ -16,6 +16,8 @@ Future<void> main() async {
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
+  // Ẩn thanh trạng thái và thanh điều hướng, để phần chơi đàn chiếm toàn màn hình.
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   await AppThemeController.instance.load();
   await PianoAudio.instance.load();
   runApp(const AppianoApp());
@@ -123,20 +125,49 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+/// Thanh điều khiển mỏng phía trên, dùng chung cho các màn hình chơi đàn.
+class _TopBar extends StatelessWidget {
+  final Widget title;
+  final List<Widget> actions;
+
+  const _TopBar({required this.title, this.actions = const []});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'Quay lại',
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          Expanded(
+            child: DefaultTextStyle.merge(
+              style: Theme.of(context).textTheme.titleMedium!,
+              child: title,
+            ),
+          ),
+          ...actions,
+        ],
+      ),
+    );
+  }
+}
+
 class FreePlayScreen extends StatelessWidget {
   const FreePlayScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chơi tự do')),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-          child: GlassBox(
-            padding: const EdgeInsets.all(6),
-            child: PianoKeyboard(onNote: (_) {}),
-          ),
+        child: Column(
+          children: [
+            const _TopBar(title: Text('Chơi tự do')),
+            Expanded(child: PianoKeyboard(onNote: (_) {})),
+          ],
         ),
       ),
     );
@@ -227,54 +258,37 @@ class _PracticeScreenState extends State<PracticeScreen> {
   Widget build(BuildContext context) {
     final total = _notes.length;
     final statusText = _finished
-        ? 'Xong! Sai $_mistakes lần'
-        : 'Nốt ${noteName(_target)} · ngón $_finger   ($_index / $total)';
+        ? '${widget.lesson.title} · Xong, sai $_mistakes lần'
+        : '${widget.lesson.title} · ${noteName(_target)} · ngón $_finger · '
+            '${_index + 1}/$total';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.lesson.title),
-        actions: [
-          IconButton(
-            tooltip: 'Làm lại',
-            icon: const Icon(Icons.refresh),
-            onPressed: _restart,
-          ),
-        ],
-      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-          child: Column(
-            children: [
-              GlassBox(
-                child: Column(
-                  children: [
-                    Text(
-                      statusText,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: _index / total,
-                      minHeight: 6,
-                    ),
-                  ],
+        child: Column(
+          children: [
+            _TopBar(
+              title: Text(statusText, overflow: TextOverflow.ellipsis),
+              actions: [
+                IconButton(
+                  tooltip: 'Làm lại',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _restart,
                 ),
+              ],
+            ),
+            LinearProgressIndicator(
+              value: _finished ? 1 : _index / total,
+              minHeight: 3,
+            ),
+            Expanded(
+              child: PianoKeyboard(
+                onNote: _onNote,
+                highlight: _finished ? const {} : {_target},
+                labels: _finished ? const {} : {_target: '$_finger'},
+                wrong: _wrong,
               ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: GlassBox(
-                  padding: const EdgeInsets.all(6),
-                  child: PianoKeyboard(
-                    onNote: _onNote,
-                    highlight: _finished ? const {} : {_target},
-                    labels: _finished ? const {} : {_target: '$_finger'},
-                    wrong: _wrong,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
