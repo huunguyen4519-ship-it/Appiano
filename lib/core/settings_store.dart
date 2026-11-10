@@ -22,6 +22,7 @@ class SettingsStore {
   static const _labelKey = 'label_mode';
   static const _hapticKey = 'haptics_on';
   static const _soundKey = 'ui_sounds_on';
+  static const _blurKey = 'blur_on';
 
   /// Số phím trắng hiển thị cùng lúc.
   final ValueNotifier<int> visibleWhites = ValueNotifier<int>(10);
@@ -36,6 +37,9 @@ class SettingsStore {
   /// Âm thanh giao diện (click, đúng, sai, hoàn thành).
   final ValueNotifier<bool> uiSounds = ValueNotifier<bool>(true);
 
+  /// Hiệu ứng kính mờ. Tắt thì khung kính đặc hơn, máy yếu sẽ mượt hơn khi chuyển màn.
+  final ValueNotifier<bool> blurOn = ValueNotifier<bool>(true);
+
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -47,6 +51,7 @@ class SettingsStore {
       }
       haptics.value = prefs.getBool(_hapticKey) ?? true;
       uiSounds.value = prefs.getBool(_soundKey) ?? true;
+      blurOn.value = prefs.getBool(_blurKey) ?? true;
     } catch (_) {}
   }
 
@@ -68,6 +73,11 @@ class SettingsStore {
   Future<void> setUiSounds(bool on) async {
     uiSounds.value = on;
     await _write((p) => p.setBool(_soundKey, on));
+  }
+
+  Future<void> setBlur(bool on) async {
+    blurOn.value = on;
+    await _write((p) => p.setBool(_blurKey, on));
   }
 
   Future<void> _write(Future<bool> Function(SharedPreferences) op) async {

@@ -6,8 +6,8 @@ import '../core/theme.dart';
 /// Không mờ dần, nên hai trang không bao giờ chồng lên nhau trong lúc chuyển.
 Route<T> appRoute<T>(Widget page) {
   return PageRouteBuilder<T>(
-    transitionDuration: const Duration(milliseconds: 320),
-    reverseTransitionDuration: const Duration(milliseconds: 260),
+    transitionDuration: const Duration(milliseconds: 240),
+    reverseTransitionDuration: const Duration(milliseconds: 200),
     pageBuilder: (context, animation, secondaryAnimation) => page,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curve = CurvedAnimation(

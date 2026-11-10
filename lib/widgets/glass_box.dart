@@ -2,8 +2,11 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
-/// Khung kính lỏng kiểu iOS: làm mờ mạnh phía sau, viền sáng lệch góc, vệt phản chiếu trên đỉnh.
+import '../core/settings_store.dart';
+
+/// Khung kính lỏng kiểu iOS: làm mờ phía sau, viền sáng lệch góc, vệt phản chiếu trên đỉnh.
 /// Đây là xấp xỉ bằng blur và gradient, chưa có khúc xạ thật (cần shader riêng).
+/// Khi tắt hiệu ứng mờ trong Cài đặt, khung vẫn có viền và đổ bóng nhưng không làm mờ nền.
 class GlassBox extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -21,46 +24,66 @@ class GlassBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shape = BorderRadius.circular(radius);
-    final body = Container(
-      // Bóng nằm ngoài ClipRRect để không bị cắt.
-      decoration: BoxDecoration(
-        borderRadius: shape,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+    return ValueListenableBuilder<bool>(
+      valueListenable: SettingsStore.instance.blurOn,
+      builder: (context, blur, _) {
+        final content = Padding(padding: padding, child: child);
+        final painted = CustomPaint(
+          painter: _GlassPainter(radius: radius, frosted: blur),
+          child: content,
+        );
+        final body = RepaintBoundary(
+          child: Container(
+            // Bóng nằm ngoài ClipRRect để không bị cắt.
+            decoration: BoxDecoration(
+              borderRadius: shape,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: shape,
+              child: blur
+                  ? BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                      child: painted,
+                    )
+                  : painted,
+            ),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: shape,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-          child: CustomPaint(
-            painter: _GlassPainter(radius: radius),
-            child: Padding(padding: padding, child: child),
-          ),
-        ),
-      ),
-    );
-    if (onTap == null) return body;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: body,
+        );
+        if (onTap == null) return body;
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: body,
+        );
+      },
     );
   }
 }
 
 class _GlassPainter extends CustomPainter {
   final double radius;
-  const _GlassPainter({required this.radius});
+  final bool frosted;
+  const _GlassPainter({required this.radius, required this.frosted});
 
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
     final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
+
+    // Khi không mờ, thêm một lớp tối để chữ vẫn đọc được trên nền sáng.
+    if (!frosted) {
+      canvas.drawRRect(
+        rrect,
+        Paint()..color = Colors.black.withValues(alpha: 0.35),
+      );
+    }
 
     // Lớp kính: sáng dần từ trên xuống.
     canvas.drawRRect(
@@ -70,8 +93,8 @@ class _GlassPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.white.withValues(alpha: 0.18),
-            Colors.white.withValues(alpha: 0.05),
+            Colors.white.withValues(alpha: frosted ? 0.18 : 0.12),
+            Colors.white.withValues(alpha: frosted ? 0.05 : 0.02),
           ],
         ).createShader(rect),
     );
@@ -110,5 +133,6 @@ class _GlassPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _GlassPainter old) => old.radius != radius;
+  bool shouldRepaint(covariant _GlassPainter old) =>
+      old.radius != radius || old.frosted != frosted;
 }

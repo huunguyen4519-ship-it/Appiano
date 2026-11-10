@@ -22,6 +22,7 @@ class SettingsScreen extends StatelessWidget {
             store.labelMode,
             store.haptics,
             store.uiSounds,
+            store.blurOn,
           ]),
           builder: (context, _) {
             final accent = AppThemeController.instance.accent.value;
@@ -163,6 +164,14 @@ class SettingsScreen extends StatelessWidget {
                         subtitle: const Text('Tiếng click, tiếng đúng, sai và hoàn thành'),
                         value: store.uiSounds.value,
                         onChanged: (v) => store.setUiSounds(v),
+                      ),
+                      SwitchListTile(
+                        title: const Text('Hiệu ứng kính mờ'),
+                        subtitle: const Text(
+                          'Tắt nếu máy hay giật khi chuyển màn hình',
+                        ),
+                        value: store.blurOn.value,
+                        onChanged: (v) => store.setBlur(v),
                       ),
                     ],
                   ),

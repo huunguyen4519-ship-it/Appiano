@@ -18,8 +18,8 @@ class EdgeLabel extends StatelessWidget {
   }
 }
 
-/// Thanh tổng quan: toàn bộ phím trắng thu nhỏ, nền chuyển từ xanh (thấp) sang cam (cao).
-/// Khung sáng là vùng đang hiển thị.
+/// Thanh tổng quan kiểu kính: toàn bộ phím trắng thu nhỏ trên dải màu xanh (thấp) -> cam (cao).
+/// Khung sáng phát màu chủ đề là vùng đang hiển thị.
 /// Kéo khung thì khung bám theo ngón tay. Chạm một chỗ thì khung nhảy tới chỗ đó.
 class KeyboardOverview extends StatefulWidget {
   final List<int> whites;
@@ -99,36 +99,68 @@ class _OverviewPainter extends CustomPainter {
     final unit = size.width / whiteCount;
     final bounds = Offset.zero & size;
 
-    // Nền dải màu: xanh (thấp) -> tím -> cam (cao).
-    final track = RRect.fromRectAndRadius(bounds, const Radius.circular(10));
+    // Dải màu nửa trong suốt: xanh (thấp) -> tím -> cam (cao).
+    final track = RRect.fromRectAndRadius(
+      bounds.deflate(1),
+      const Radius.circular(12),
+    );
     canvas.drawRRect(
       track,
       Paint()
         ..shader = const LinearGradient(
-          colors: [Color(0xFF3B5BDB), Color(0xFF7B5EA7), Color(0xFFF08C3A)],
+          colors: [Color(0x993B5BDB), Color(0x997B5EA7), Color(0x99F08C3A)],
+        ).createShader(bounds),
+    );
+    // Vệt sáng trên đỉnh dải, cho cảm giác kính.
+    canvas.drawRRect(
+      track,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.center,
+          colors: [
+            Colors.white.withValues(alpha: 0.28),
+            Colors.white.withValues(alpha: 0),
+          ],
         ).createShader(bounds),
     );
 
-    // Vạch từng phím trắng.
-    final tick = Paint()..color = Colors.white.withValues(alpha: 0.85);
+    // Vạch từng phím trắng, mảnh và mờ.
+    final tick = Paint()..color = Colors.white.withValues(alpha: 0.45);
     for (int i = 0; i < whiteCount; i++) {
-      canvas.drawRect(
-        Rect.fromLTWH(i * unit + 0.5, 7, unit - 1, size.height - 14),
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            i * unit + unit * 0.25,
+            size.height * 0.22,
+            unit * 0.5,
+            size.height * 0.56,
+          ),
+          const Radius.circular(1),
+        ),
         tick,
       );
     }
 
-    // Khung vùng đang hiển thị.
+    // Khung vùng đang hiển thị: nền màu chủ đề, viền phát sáng.
     final window = RRect.fromRectAndRadius(
-      Rect.fromLTWH(start * unit, 0, visible * unit, size.height),
+      Rect.fromLTWH(start * unit + 1, 1, visible * unit - 2, size.height - 2),
       const Radius.circular(10),
     );
-    canvas.drawRRect(window, Paint()..color = accent.withValues(alpha: 0.25));
+    canvas.drawRRect(window, Paint()..color = accent.withValues(alpha: 0.22));
     canvas.drawRRect(
-      window.deflate(1),
+      window,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
+        ..strokeWidth = 4
+        ..color = accent.withValues(alpha: 0.45)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+    );
+    canvas.drawRRect(
+      window,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
         ..color = accent,
     );
   }
