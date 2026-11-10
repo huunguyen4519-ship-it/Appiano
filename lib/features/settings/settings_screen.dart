@@ -78,6 +78,22 @@ class SettingsScreen extends StatelessWidget {
                       const SizedBox(height: 12),
                       SegmentedButton<NoteLabelMode>(
                         showSelectedIcon: false,
+                        style: SegmentedButton.styleFrom(
+                          foregroundColor: Colors.white70,
+                          backgroundColor: Colors.white.withValues(alpha: 0.06),
+                          selectedBackgroundColor: accent,
+                          selectedForegroundColor:
+                              ThemeData.estimateBrightnessForColor(accent) ==
+                                      Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black87,
+                          side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.35),
+                          ),
+                          textStyle: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         segments: const [
                           ButtonSegment(
                             value: NoteLabelMode.off,

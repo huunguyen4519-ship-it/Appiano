@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import '../../core/app_feedback.dart';
 import '../../data/progress_store.dart';
 import '../../theory/lessons.dart';
-import '../../theory/notes.dart';
 import '../../widgets/app_route.dart';
 import '../../widgets/glass_app_bar.dart';
 import '../../widgets/glass_box.dart';
 import '../free_play/free_play_screen.dart';
-import '../practice/practice_screen.dart';
+import '../learn/learn_screen.dart';
 import '../settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Map<String, int> _stars = {};
+  int _done = 0;
 
   @override
   void initState() {
@@ -29,7 +28,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _refresh() async {
     final stars = await ProgressStore.bestStars([for (final l in lessons) l.id]);
-    if (mounted) setState(() => _stars = stars);
+    final done = stars.values.where((s) => s > 0).length;
+    if (mounted) setState(() => _done = done);
   }
 
   Future<void> _open(Widget page) async {
@@ -55,37 +55,66 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            for (final lesson in lessons)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: GlassBox(
-                  padding: EdgeInsets.zero,
-                  onTap: () => _open(PracticeScreen(lesson: lesson)),
-                  child: ListTile(
-                    leading: Icon(
-                      (_stars[lesson.id] ?? 0) > 0
-                          ? Icons.check_circle
-                          : Icons.music_note,
-                    ),
-                    title: Text(lesson.title),
-                    subtitle: Text(lesson.description),
-                    trailing: Text(
-                      starsText(_stars[lesson.id] ?? 0),
-                      style: const TextStyle(fontSize: 18, color: Colors.amber),
-                    ),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 8),
-            GlassBox(
-              padding: EdgeInsets.zero,
+            _ModeCard(
+              icon: Icons.piano,
+              title: 'Chơi đàn',
+              subtitle: 'Bàn phím tự do và hợp âm. Không có bài.',
               onTap: () => _open(const FreePlayScreen()),
-              child: const ListTile(
-                leading: Icon(Icons.piano),
-                title: Text('Chơi tự do'),
-                subtitle: Text('Bàn phím, không có bài'),
-              ),
             ),
+            const SizedBox(height: 16),
+            _ModeCard(
+              icon: Icons.school_outlined,
+              title: 'Học đàn',
+              subtitle: 'Đã hoàn thành $_done/${lessons.length} bài',
+              onTap: () => _open(const LearnScreen()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ModeCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    return GlassBox(
+      radius: 30,
+      padding: const EdgeInsets.all(24),
+      onTap: onTap,
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: primary.withValues(alpha: 0.25),
+                border: Border.all(color: primary.withValues(alpha: 0.6)),
+              ),
+              child: Icon(icon, color: primary, size: 28),
+            ),
+            const SizedBox(height: 18),
+            Text(title, style: theme.textTheme.headlineSmall),
+            const SizedBox(height: 6),
+            Text(subtitle, style: theme.textTheme.bodyMedium),
           ],
         ),
       ),

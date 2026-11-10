@@ -10,6 +10,16 @@ const List<Color> accentPresets = [
   Color(0xFF6BE3B5),
   Color(0xFF5EE7FF),
   Color(0xFFFFD86B),
+  Color(0xFFFF6F61), // san hô
+  Color(0xFFE53950), // đỏ thẫm
+  Color(0xFFA6E22E), // xanh chanh
+  Color(0xFF26A69A), // xanh cổ vịt
+  Color(0xFF4FC3F7), // xanh da trời
+  Color(0xFFE040FB), // hồng tím
+  Color(0xFFFFB300), // hổ phách
+  Color(0xFF5C6BC0), // chàm
+  Color(0xFFE8A598), // hồng đất
+  Color(0xFF26C6DA), // ngọc lam
 ];
 
 /// Giữ màu chủ đề hiện tại và lưu lại trên máy.

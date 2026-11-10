@@ -9,8 +9,8 @@ import 'features/home/home_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
   ]);
   // Ẩn thanh trạng thái và thanh điều hướng để phần chơi đàn chiếm toàn màn hình.
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);

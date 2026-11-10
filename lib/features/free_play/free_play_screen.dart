@@ -46,7 +46,7 @@ class _FreePlayScreenState extends State<FreePlayScreen> {
         child: Column(
           children: [
             AppTopBar(
-              title: const Text('Chơi tự do'),
+              title: const Text('Chơi đàn'),
               actions: [
                 PopupMenuButton<PlayMode>(
                   tooltip: 'Chế độ bàn phím',
