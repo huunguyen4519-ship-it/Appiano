@@ -40,7 +40,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Set<String> _done = {};
+  Map<String, int> _stars = {};
 
   @override
   void initState() {
@@ -49,8 +49,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _refresh() async {
-    final done = await Progress.completed();
-    if (mounted) setState(() => _done = done);
+    final stars = await Progress.bestStars([for (final l in lessons) l.id]);
+    if (mounted) setState(() => _stars = stars);
   }
 
   Future<void> _open(Widget page) async {
@@ -69,12 +69,16 @@ class _HomeScreenState extends State<HomeScreen> {
             Card(
               child: ListTile(
                 leading: Icon(
-                  _done.contains(lesson.id)
+                  (_stars[lesson.id] ?? 0) > 0
                       ? Icons.check_circle
                       : Icons.music_note,
                 ),
                 title: Text(lesson.title),
                 subtitle: Text(lesson.description),
+                trailing: Text(
+                  starsText(_stars[lesson.id] ?? 0),
+                  style: const TextStyle(fontSize: 18, color: Colors.amber),
+                ),
                 onTap: () => _open(PracticeScreen(lesson: lesson)),
               ),
             ),
@@ -120,11 +124,13 @@ class PracticeScreen extends StatefulWidget {
 
 class _PracticeScreenState extends State<PracticeScreen> {
   int _index = 0;
+  int _mistakes = 0;
   int? _wrong;
   bool _finished = false;
 
   List<int> get _notes => widget.lesson.notes;
   int get _target => _notes[_index];
+  int get _finger => widget.lesson.fingers[_index];
 
   void _onNote(int midi) {
     if (_finished) return;
@@ -135,6 +141,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       });
       if (_index >= _notes.length) _finish();
     } else {
+      setState(() => _mistakes++);
       _flashWrong(midi);
     }
   }
@@ -146,14 +153,25 @@ class _PracticeScreenState extends State<PracticeScreen> {
     });
   }
 
+  // 0 sai: 3 sao. Sai 1-2 lần: 2 sao. Sai nhiều hơn: 1 sao.
+  int get _starsEarned {
+    if (_mistakes == 0) return 3;
+    if (_mistakes <= 2) return 2;
+    return 1;
+  }
+
   void _finish() {
     setState(() => _finished = true);
-    unawaited(Progress.markCompleted(widget.lesson.id));
+    final stars = _starsEarned;
+    unawaited(Progress.saveStars(widget.lesson.id, stars));
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Hoàn thành!'),
-        content: Text('Bạn đã xong "${widget.lesson.title}".'),
+        content: Text(
+          '"${widget.lesson.title}"\n'
+          '${starsText(stars)}   Sai $_mistakes lần',
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -170,6 +188,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   void _restart() {
     setState(() {
       _index = 0;
+      _mistakes = 0;
       _wrong = null;
       _finished = false;
     });
@@ -179,8 +198,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
   Widget build(BuildContext context) {
     final total = _notes.length;
     final statusText = _finished
-        ? 'Xong!'
-        : 'Nốt tiếp theo: ${noteName(_target)}   ($_index / $total)';
+        ? 'Xong! Sai $_mistakes lần'
+        : 'Nốt ${noteName(_target)} · ngón $_finger   ($_index / $total)';
 
     return Scaffold(
       appBar: AppBar(
@@ -200,7 +219,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 children: [
-                  Text(statusText, style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    statusText,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   LinearProgressIndicator(value: _index / total),
                 ],
@@ -212,6 +234,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 child: PianoKeyboard(
                   onNote: _onNote,
                   highlight: _finished ? const {} : {_target},
+                  labels: _finished ? const {} : {_target: '$_finger'},
                   wrong: _wrong,
                 ),
               ),

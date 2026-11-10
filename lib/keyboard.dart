@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import 'audio.dart';
@@ -14,11 +13,15 @@ class PianoKeyboard extends StatefulWidget {
   /// Nốt vừa bấm sai, tô đỏ thoáng qua.
   final int? wrong;
 
+  /// Chữ ghi trên phím, ví dụ số ngón tay.
+  final Map<int, String> labels;
+
   const PianoKeyboard({
     super.key,
     required this.onNote,
     this.highlight = const {},
     this.wrong,
+    this.labels = const {},
   });
 
   @override
@@ -130,6 +133,8 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
                       const Color(0xFFA8E6A1),
                     ),
                     borderColor: const Color(0xFF9A9A9A),
+                    label: widget.labels[_whiteNotes[i]],
+                    labelColor: Colors.black87,
                   ),
                 ),
               for (final b in _blackNotes)
@@ -146,6 +151,8 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
                     ),
                     borderColor: Colors.black,
                     radius: 4,
+                    label: widget.labels[b.midi],
+                    labelColor: Colors.white,
                   ),
                 ),
             ],
@@ -159,13 +166,27 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
     required Color color,
     required Color borderColor,
     double radius = 6,
+    String? label,
+    Color labelColor = Colors.black87,
   }) {
     return Container(
+      alignment: Alignment.bottomCenter,
+      padding: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: color,
         border: Border.all(color: borderColor, width: 1),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(radius)),
       ),
+      child: label == null
+          ? null
+          : Text(
+              label,
+              style: TextStyle(
+                color: labelColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
     );
   }
 }
