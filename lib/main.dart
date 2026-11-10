@@ -132,9 +132,9 @@ class FreePlayScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Chơi tự do')),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
           child: GlassBox(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             child: PianoKeyboard(onNote: (_) {}),
           ),
         ),
@@ -243,7 +243,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
           child: Column(
             children: [
               GlassBox(
@@ -264,7 +264,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
               const SizedBox(height: 12),
               Expanded(
                 child: GlassBox(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(6),
                   child: PianoKeyboard(
                     onNote: _onNote,
                     highlight: _finished ? const {} : {_target},
