@@ -73,3 +73,17 @@ String? noteLabel(int midi, NoteLabelMode mode) {
     NoteLabelMode.solfege => _solfegeNames[i],
   };
 }
+
+const List<Color> _octaveColors = [
+  Color(0xFFFFD166), // quãng tám 2: vàng
+  Color(0xFFEF8354), // quãng tám 3: cam
+  Color(0xFF06D6A0), // quãng tám 4: xanh ngọc
+  Color(0xFF4CC9F0), // quãng tám 5: xanh dương
+  Color(0xFFB388FF), // quãng tám 6: tím
+];
+
+/// Màu nhãn của phím trắng theo quãng tám, để nhìn là biết đang ở vùng âm nào.
+Color octaveColor(int midi) {
+  final index = (midi ~/ 12 - 1) - 2;
+  return _octaveColors[index.clamp(0, _octaveColors.length - 1)];
+}

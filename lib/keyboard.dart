@@ -273,6 +273,9 @@ class _KeysPainter extends CustomPainter {
         radius: 10,
         label: labels[midi] ?? noteLabel(midi, labelMode),
         labelColor: Colors.black87,
+        pill: labels[midi] == null && labelMode != NoteLabelMode.off
+            ? octaveColor(midi)
+            : null,
         fontSize: (whiteW * 0.26).clamp(8.0, 16.0).toDouble(),
       );
     }
@@ -326,6 +329,7 @@ class _KeysPainter extends CustomPainter {
     String? label,
     required Color labelColor,
     required double fontSize,
+    Color? pill,
   }) {
     final rrect = RRect.fromRectAndCorners(
       rect,
@@ -373,10 +377,20 @@ class _KeysPainter extends CustomPainter {
         ),
         textDirection: TextDirection.ltr,
       )..layout();
-      tp.paint(
-        canvas,
-        Offset(rect.center.dx - tp.width / 2, rect.bottom - tp.height - 8),
+      final pos = Offset(
+        rect.center.dx - tp.width / 2,
+        rect.bottom - tp.height - 8,
       );
+      if (pill != null) {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(pos.dx - 5, pos.dy - 2, tp.width + 10, tp.height + 4),
+            const Radius.circular(8),
+          ),
+          Paint()..color = pill,
+        );
+      }
+      tp.paint(canvas, pos);
     }
   }
 

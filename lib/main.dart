@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'audio.dart';
+import 'chords.dart';
 import 'keyboard.dart';
 import 'lessons.dart';
 import 'progress.dart';
@@ -158,8 +159,34 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-class FreePlayScreen extends StatelessWidget {
+class FreePlayScreen extends StatefulWidget {
   const FreePlayScreen({super.key});
+
+  @override
+  State<FreePlayScreen> createState() => _FreePlayScreenState();
+}
+
+class _FreePlayScreenState extends State<FreePlayScreen> {
+  PlayMode _mode = PlayMode.single;
+  Set<int> _chordKeys = {};
+  Timer? _chordTimer;
+
+  @override
+  void dispose() {
+    _chordTimer?.cancel();
+    super.dispose();
+  }
+
+  void _playChord(Chord chord) {
+    for (final n in chord.notes) {
+      PianoAudio.instance.playNote(n);
+    }
+    _chordTimer?.cancel();
+    setState(() => _chordKeys = chord.notes.toSet());
+    _chordTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => _chordKeys = {});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,8 +194,33 @@ class FreePlayScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const _TopBar(title: Text('Chơi tự do')),
-            Expanded(child: PianoKeyboard(onNote: (_) {})),
+            _TopBar(
+              title: const Text('Chơi tự do'),
+              actions: [
+                PopupMenuButton<PlayMode>(
+                  tooltip: 'Chế độ bàn phím',
+                  icon: const Icon(Icons.tune),
+                  initialValue: _mode,
+                  onSelected: (m) => setState(() => _mode = m),
+                  itemBuilder: (_) => [
+                    for (final m in PlayMode.values)
+                      PopupMenuItem(value: m, child: Text(m.label)),
+                  ],
+                ),
+                IconButton(
+                  tooltip: 'Cài đặt',
+                  icon: const Icon(Icons.palette_outlined),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  ),
+                ),
+              ],
+            ),
+            if (_mode == PlayMode.chords) ChordBar(onChord: _playChord),
+            Expanded(
+              child: PianoKeyboard(onNote: (_) {}, highlight: _chordKeys),
+            ),
           ],
         ),
       ),
