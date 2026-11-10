@@ -58,7 +58,11 @@ jobs:
         run: flutter pub get
 
       - name: Build release APK
-        run: flutter build apk --release --split-per-abi
+        run: |
+          # Một số plugin (file_picker) yêu cầu compileSdk 36 trở lên.
+          sed -i -E 's/flutter\.compileSdkVersion/36/' android/app/build.gradle*
+          grep -n "compileSdk" android/app/build.gradle*
+          flutter build apk --release --split-per-abi
 
       - name: Publish APK to GitHub Release
         env:
