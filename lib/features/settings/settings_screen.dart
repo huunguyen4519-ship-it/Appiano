@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../core/app_feedback.dart';
 import '../../core/settings_store.dart';
 import '../../core/theme.dart';
-import '../../theory/notation.dart';
 import '../../widgets/glass_app_bar.dart';
 import '../../widgets/glass_box.dart';
 
@@ -20,15 +19,14 @@ class SettingsScreen extends StatelessWidget {
           animation: Listenable.merge([
             AppThemeController.instance.accent,
             store.visibleWhites,
-            store.notation,
-            store.labelsVisible,
+            store.labelMode,
             store.haptics,
             store.uiSounds,
           ]),
           builder: (context, _) {
             final accent = AppThemeController.instance.accent.value;
             final visible = store.visibleWhites.value;
-            final notation = store.notation.value;
+            final mode = store.labelMode.value;
             final hue = HSVColor.fromColor(accent).hue;
             final theme = Theme.of(context);
 
@@ -73,35 +71,35 @@ class SettingsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Nhãn trên phím', style: theme.textTheme.titleMedium),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Hiện nhãn nốt'),
-                        value: store.labelsVisible.value,
-                        onChanged: (v) {
-                          AppFeedback.tap();
-                          store.setLabelsVisible(v);
-                        },
+                      Text(
+                        'Tên hiển thị trên phím',
+                        style: theme.textTheme.titleMedium,
                       ),
-                      const SizedBox(height: 8),
-                      SegmentedButton<NoteNotation>(
+                      const SizedBox(height: 12),
+                      SegmentedButton<NoteLabelMode>(
                         showSelectedIcon: false,
-                        segments: [
-                          for (final n in notationChoices)
-                            ButtonSegment(
-                              value: n,
-                              label: Text(n.displayName),
-                            ),
-                        ],
-                        selected: {
-                          notationChoices.firstWhere(
-                            (n) => n.id == notation.id,
-                            orElse: () => notationChoices.first,
+                        segments: const [
+                          ButtonSegment(
+                            value: NoteLabelMode.off,
+                            label: Text('Tắt'),
                           ),
-                        },
+                          ButtonSegment(
+                            value: NoteLabelMode.letters,
+                            label: Text('C4'),
+                          ),
+                          ButtonSegment(
+                            value: NoteLabelMode.numbers,
+                            label: Text('123'),
+                          ),
+                          ButtonSegment(
+                            value: NoteLabelMode.solfege,
+                            label: Text('Đô Rê'),
+                          ),
+                        ],
+                        selected: {mode},
                         onSelectionChanged: (s) {
                           AppFeedback.tap();
-                          store.setNotation(s.first);
+                          store.setLabelMode(s.first);
                         },
                       ),
                     ],
@@ -146,7 +144,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       SwitchListTile(
                         title: const Text('Âm thanh giao diện'),
-                        subtitle: const Text('Tiếng click, tiếng sai và hoàn thành'),
+                        subtitle: const Text('Tiếng click, tiếng đúng, sai và hoàn thành'),
                         value: store.uiSounds.value,
                         onChanged: (v) => store.setUiSounds(v),
                       ),

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../theory/notation.dart';
-import 'keyboard_palette.dart';
+import '../../core/settings_store.dart';
+import '../../theory/notes.dart';
 
-/// Vẽ toàn bộ phím trong một lần vẽ. Nhanh hơn nhiều so với một widget cho mỗi phím.
-/// Chỉ biết cách vẽ. Không biết âm thanh, không biết ký âm nào đang dùng.
+/// Vẽ toàn bộ phím trong một lần vẽ, nhanh hơn nhiều so với một widget cho mỗi phím.
 class KeysPainter extends CustomPainter {
   final List<int> whites;
   final List<({int midi, int leftWhite})> blacks;
@@ -14,12 +13,7 @@ class KeysPainter extends CustomPainter {
   final Set<int> highlight;
   final int? wrong;
   final Map<int, String> labels;
-
-  /// Ký âm đang dùng. Null nghĩa là ẩn nhãn.
-  final NoteNotation? notation;
-  final KeyboardPalette palette;
-
-  /// Màu nhấn khi bấm phím, đã được chọn sẵn bởi người gọi.
+  final NoteLabelMode labelMode;
   final Color accent;
 
   KeysPainter({
@@ -31,8 +25,7 @@ class KeysPainter extends CustomPainter {
     required this.highlight,
     required this.wrong,
     required this.labels,
-    required this.notation,
-    required this.palette,
+    required this.labelMode,
     required this.accent,
   });
 
@@ -46,6 +39,7 @@ class KeysPainter extends CustomPainter {
       final left = (i - start) * whiteW;
       if (left < -whiteW || left > size.width) continue;
       final midi = whites[i];
+      final isLabelFromMode = labels[midi] == null;
       _drawKey(
         canvas,
         Rect.fromLTWH(left + 1, 0, whiteW - 2, size.height),
@@ -53,11 +47,12 @@ class KeysPainter extends CustomPainter {
         black: false,
         pressed: pressed.contains(midi),
         radius: 10,
-        label: labels[midi] ?? notation?.labelFor(midi),
-        labelColor: palette.labelOnWhite,
-        fontSize: (whiteW * 0.24).clamp(9.0, 14.0).toDouble(),
-        // Nhãn nằm ngay dưới chân phím đen, trên thân phím trắng.
-        labelTop: blackH + 8,
+        label: labels[midi] ?? noteLabel(midi, labelMode),
+        labelColor: Colors.black87,
+        fontSize: (whiteW * 0.26).clamp(8.0, 16.0).toDouble(),
+        pill: isLabelFromMode && labelMode != NoteLabelMode.off
+            ? octaveColor(midi)
+            : null,
       );
     }
 
@@ -71,8 +66,9 @@ class KeysPainter extends CustomPainter {
         black: true,
         pressed: pressed.contains(b.midi),
         radius: 6,
+        label: labels[b.midi] ?? noteLabel(b.midi, labelMode),
         labelColor: Colors.white,
-        fontSize: 0,
+        fontSize: (whiteW * 0.2).clamp(7.0, 12.0).toDouble(),
       );
     }
   }
@@ -84,17 +80,21 @@ class KeysPainter extends CustomPainter {
   }
 
   List<Color> _whiteColors(int midi) {
-    if (wrong == midi) return palette.wrongWhite;
+    if (wrong == midi) return const [Color(0xFFFFB4AB), Color(0xFFE2574C)];
     if (pressed.contains(midi)) return _pressedColors(false);
-    if (highlight.contains(midi)) return palette.highlightWhite;
-    return palette.whiteGradient;
+    if (highlight.contains(midi)) {
+      return const [Color(0xFFCFFAC4), Color(0xFF6BD16A)];
+    }
+    return const [Color(0xFFFFFFFF), Color(0xFFE6E6EE)];
   }
 
   List<Color> _blackColors(int midi) {
-    if (wrong == midi) return palette.wrongBlack;
+    if (wrong == midi) return const [Color(0xFFFF8A80), Color(0xFFB71C1C)];
     if (pressed.contains(midi)) return _pressedColors(true);
-    if (highlight.contains(midi)) return palette.highlightBlack;
-    return palette.blackGradient;
+    if (highlight.contains(midi)) {
+      return const [Color(0xFF81C784), Color(0xFF1B5E20)];
+    }
+    return const [Color(0xFF3A3A46), Color(0xFF0A0A0E)];
   }
 
   void _drawKey(
@@ -107,7 +107,7 @@ class KeysPainter extends CustomPainter {
     String? label,
     required Color labelColor,
     required double fontSize,
-    double? labelTop,
+    Color? pill,
   }) {
     // Phím bị bấm thì lún xuống một chút, bóng nhỏ lại: cảm giác phím thật.
     final rect = pressed ? baseRect.shift(const Offset(0, 2)) : baseRect;
@@ -140,26 +140,32 @@ class KeysPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1
-        ..color = black ? Colors.black : palette.whiteBorder,
+        ..color = black ? Colors.black : const Color(0xFFB0B0BC),
     );
 
-    if (label == null || labelTop == null) return;
+    if (label == null) return;
     final tp = TextPainter(
       text: TextSpan(
         text: label,
         style: TextStyle(
           color: labelColor,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w700,
           fontSize: fontSize,
-          letterSpacing: 0.3,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    tp.paint(
-      canvas,
-      Offset(rect.center.dx - tp.width / 2, labelTop),
-    );
+    final pos = Offset(rect.center.dx - tp.width / 2, rect.bottom - tp.height - 8);
+    if (pill != null) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(pos.dx - 5, pos.dy - 2, tp.width + 10, tp.height + 4),
+          const Radius.circular(8),
+        ),
+        Paint()..color = pill,
+      );
+    }
+    tp.paint(canvas, pos);
   }
 
   @override

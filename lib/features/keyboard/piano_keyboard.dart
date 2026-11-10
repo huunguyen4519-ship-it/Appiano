@@ -5,7 +5,6 @@ import '../../core/audio.dart';
 import '../../core/settings_store.dart';
 import '../../core/theme.dart';
 import 'keyboard_overview.dart';
-import 'keyboard_palette.dart';
 import 'keys_painter.dart';
 
 const int _lowMidi = 36; // C2
@@ -15,23 +14,19 @@ const int _startMidi = 60; // C4, vị trí bắt đầu
 const Set<int> _whiteSemitones = {0, 2, 4, 5, 7, 9, 11};
 
 /// Bàn phím trượt qua nhiều quãng tám, có thanh tổng quan phía trên.
-/// Widget này chỉ lo chạm và vẽ. Âm thanh đi qua [PianoAudio], phản hồi đi qua [AppFeedback],
-/// và ký âm đọc từ [SettingsStore], nên đổi kiểu nào cũng không phải sửa bàn phím.
+/// Đây là widget duy nhất xử lý chạm phím, nên mọi màn hình dùng chung một cách chạm.
 class PianoKeyboard extends StatefulWidget {
   /// Gọi mỗi khi người chơi chạm vào một nốt mới.
   final void Function(int midi) onNote;
 
-  /// Các nốt cần tô gợi ý. Bàn phím tự trượt tới nốt đầu tiên.
+  /// Các nốt cần tô xanh lá để gợi ý. Bàn phím tự trượt tới nốt đầu tiên.
   final Set<int> highlight;
 
   /// Nốt vừa bấm sai, tô đỏ thoáng qua.
   final int? wrong;
 
-  /// Chữ ghi đè lên phím, ví dụ số ngón tay. Ưu tiên hơn ký âm chung.
+  /// Chữ ghi đè lên phím, ví dụ số ngón tay. Ưu tiên hơn kiểu tên nốt.
   final Map<int, String> labels;
-
-  /// Bảng màu của màn hình đang dùng.
-  final KeyboardPalette palette;
 
   const PianoKeyboard({
     super.key,
@@ -39,7 +34,6 @@ class PianoKeyboard extends StatefulWidget {
     this.highlight = const {},
     this.wrong,
     this.labels = const {},
-    this.palette = defaultPalette,
   });
 
   @override
@@ -128,21 +122,16 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
 
   @override
   Widget build(BuildContext context) {
-    final store = SettingsStore.instance;
     return AnimatedBuilder(
       animation: Listenable.merge([
         AppThemeController.instance.accent,
-        store.visibleWhites,
-        store.notation,
-        store.labelsVisible,
+        SettingsStore.instance.visibleWhites,
+        SettingsStore.instance.labelMode,
       ]),
       builder: (context, _) {
-        final palette = widget.palette;
-        final themeAccent = AppThemeController.instance.accent.value;
-        final accent = palette.accent ?? themeAccent;
+        final accent = AppThemeController.instance.accent.value;
         final visible = _visible;
-        final notation =
-            store.labelsVisible.value ? store.notation.value : null;
+        final mode = SettingsStore.instance.labelMode.value;
         // Nếu vừa đổi số phím hiển thị, giữ vị trí cuộn trong giới hạn mới.
         _startF = _startF.clamp(0.0, _maxStart).toDouble();
 
@@ -164,7 +153,6 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
                       whites: _whites,
                       start: _startF,
                       visible: visible,
-                      palette: palette,
                       accent: accent,
                       onChanged: _setStart,
                     ),
@@ -228,8 +216,7 @@ class _PianoKeyboardState extends State<PianoKeyboard> {
                               highlight: widget.highlight,
                               wrong: widget.wrong,
                               labels: widget.labels,
-                              notation: notation,
-                              palette: palette,
+                              labelMode: mode,
                               accent: accent,
                             ),
                           ),
