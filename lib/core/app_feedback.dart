@@ -24,7 +24,7 @@ class AppFeedback {
 
   /// Khi làm đúng một nốt trong bài.
   static void correct() {
-    if (_sounds) PianoAudio.instance.playUi('correct');
+    // Cố ý không có âm: bấm đúng phím chỉ rung nhẹ, để không bị tiếng lặp lại khi chơi.
     if (_haptics) HapticFeedback.selectionClick();
   }
 

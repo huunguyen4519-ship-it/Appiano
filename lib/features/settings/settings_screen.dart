@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_feedback.dart';
 import '../../core/settings_store.dart';
 import '../../core/theme.dart';
+import '../../widgets/glass_app_bar.dart';
 import '../../widgets/glass_box.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -12,7 +13,7 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = SettingsStore.instance;
     return Scaffold(
-      appBar: AppBar(title: const Text('Cài đặt')),
+      appBar: GlassAppBar(title: const Text('Cài đặt')),
       body: SafeArea(
         child: AnimatedBuilder(
           animation: Listenable.merge([

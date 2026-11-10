@@ -5,6 +5,7 @@ import '../../data/progress_store.dart';
 import '../../theory/lessons.dart';
 import '../../theory/notes.dart';
 import '../../widgets/app_route.dart';
+import '../../widgets/glass_app_bar.dart';
 import '../../widgets/glass_box.dart';
 import '../free_play/free_play_screen.dart';
 import '../practice/practice_screen.dart';
@@ -40,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: GlassAppBar(
         title: const Text('Appiano'),
         actions: [
           IconButton(

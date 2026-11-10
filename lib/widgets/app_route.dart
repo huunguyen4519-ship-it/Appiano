@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Chuyển màn hình dùng chung: trượt nhẹ từ dưới lên và hiện dần.
-/// Mọi chỗ mở màn hình mới đều đi qua đây để chuyển động nhất quán.
+import '../core/theme.dart';
+
+/// Chuyển màn hình dùng chung: trang mới trượt từ dưới lên và che hoàn toàn trang cũ.
+/// Không mờ dần, nên hai trang không bao giờ chồng lên nhau trong lúc chuyển.
 Route<T> appRoute<T>(Widget page) {
   return PageRouteBuilder<T>(
     transitionDuration: const Duration(milliseconds: 320),
@@ -12,15 +14,13 @@ Route<T> appRoute<T>(Widget page) {
         parent: animation,
         curve: Curves.easeOutCubic,
       );
-      return FadeTransition(
-        opacity: curve,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.04),
-            end: Offset.zero,
-          ).animate(curve),
-          child: child,
-        ),
+      return SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.06),
+          end: Offset.zero,
+        ).animate(curve),
+        // Bọc nền đặc để trang mới che kín trang cũ trong lúc trượt.
+        child: LiquidBackground(child: child),
       );
     },
   );
