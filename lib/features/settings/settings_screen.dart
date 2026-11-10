@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'settings_store.dart';
-import 'ui.dart';
+import '../../core/app_feedback.dart';
+import '../../core/settings_store.dart';
+import '../../core/theme.dart';
+import '../../widgets/glass_box.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -17,6 +19,8 @@ class SettingsScreen extends StatelessWidget {
             AppThemeController.instance.accent,
             store.visibleWhites,
             store.labelMode,
+            store.haptics,
+            store.uiSounds,
           ]),
           builder: (context, _) {
             final accent = AppThemeController.instance.accent.value;
@@ -66,8 +70,10 @@ class SettingsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Tên hiển thị trên phím',
-                          style: theme.textTheme.titleMedium),
+                      Text(
+                        'Tên hiển thị trên phím',
+                        style: theme.textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 12),
                       SegmentedButton<NoteLabelMode>(
                         showSelectedIcon: false,
@@ -90,8 +96,10 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         ],
                         selected: {mode},
-                        onSelectionChanged: (s) =>
-                            store.setLabelMode(s.first),
+                        onSelectionChanged: (s) {
+                          AppFeedback.tap();
+                          store.setLabelMode(s.first);
+                        },
                       ),
                     ],
                   ),
@@ -102,8 +110,10 @@ class SettingsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Số phím hiển thị: $visible',
-                          style: theme.textTheme.titleMedium),
+                      Text(
+                        'Số phím hiển thị: $visible',
+                        style: theme.textTheme.titleMedium,
+                      ),
                       Slider(
                         value: visible.toDouble(),
                         min: minVisibleWhites.toDouble(),
@@ -116,6 +126,26 @@ class SettingsScreen extends StatelessWidget {
                       Text(
                         'Ít phím thì phím to hơn, dễ bấm. Nhiều phím thì thấy được nhiều nốt hơn.',
                         style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                GlassBox(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        title: const Text('Rung phản hồi'),
+                        subtitle: const Text('Rung nhẹ khi chạm phím và khi làm đúng sai'),
+                        value: store.haptics.value,
+                        onChanged: (v) => store.setHaptics(v),
+                      ),
+                      SwitchListTile(
+                        title: const Text('Âm thanh giao diện'),
+                        subtitle: const Text('Tiếng click, tiếng đúng, sai và hoàn thành'),
+                        value: store.uiSounds.value,
+                        onChanged: (v) => store.setUiSounds(v),
                       ),
                     ],
                   ),
@@ -138,7 +168,10 @@ class _Swatch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => AppThemeController.instance.setAccent(color),
+      onTap: () {
+        AppFeedback.tap();
+        AppThemeController.instance.setAccent(color);
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: 52,

@@ -1,10 +1,12 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Lưu tiến độ trên máy. Nếu lỗi thì app vẫn chạy, chỉ không lưu được.
-class Progress {
+/// Lưu tiến độ (số sao cao nhất của mỗi bài) trên máy.
+/// Nếu lỗi thì app vẫn chạy, chỉ là không lưu được.
+class ProgressStore {
+  ProgressStore._();
+
   static String _key(String id) => 'stars_$id';
 
-  /// Số sao cao nhất đã đạt của từng bài (0 = chưa xong).
   static Future<Map<String, int>> bestStars(List<String> ids) async {
     try {
       final prefs = await SharedPreferences.getInstance();

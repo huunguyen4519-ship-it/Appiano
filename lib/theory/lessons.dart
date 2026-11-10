@@ -46,13 +46,3 @@ const List<Lesson> lessons = [
     fingers: [3, 3, 4, 5, 5, 4, 3, 2, 1, 1, 2, 3, 3, 2, 2],
   ),
 ];
-
-const List<String> _noteNames = [
-  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
-];
-
-/// Tên nốt, ví dụ 60 -> C4.
-String noteName(int midi) => '${_noteNames[midi % 12]}${midi ~/ 12 - 1}';
-
-/// Chuỗi sao, ví dụ 2 -> ★★☆.
-String starsText(int stars) => '★' * stars + '☆' * (3 - stars);

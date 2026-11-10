@@ -27,6 +27,9 @@ jobs:
       - name: Analyze project source
         run: flutter analyze
 
+      - name: Run tests
+        run: flutter test
+
   build-apk:
     needs: analyze
     if: github.event_name == 'push'
