@@ -10,7 +10,6 @@ import '../../data/progress_store.dart';
 import '../../theory/lesson.dart';
 import '../../theory/lesson_format.dart';
 import '../../theory/lessons.dart';
-import '../../theory/lesson.dart';
 import '../../theory/midi_reader.dart';
 import '../../theory/notes.dart';
 import '../../widgets/app_route.dart';
