@@ -46,7 +46,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: GlassAppBar(
-        title: const Text('Appiano'),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image(
+              image: AssetImage('assets/ui/logo.png'),
+              width: 30,
+              height: 30,
+            ),
+            SizedBox(width: 10),
+            Text('Appiano'),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Cài đặt',

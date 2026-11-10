@@ -57,6 +57,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # Thay icon mặc định bằng logo của app ở mọi mật độ màn hình.
+      - name: Set launcher icon
+        run: |
+          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            name=${d%%:*}
+            size=${d##*:}
+            convert assets/ui/logo.png -resize ${size}x${size} \
+              android/app/src/main/res/mipmap-$name/ic_launcher.png
+          done
+
       - name: Build release APK
         run: |
           # Một số plugin (file_picker) yêu cầu compileSdk 36 trở lên.
