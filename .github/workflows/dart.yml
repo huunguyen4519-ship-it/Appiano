@@ -74,7 +74,34 @@ jobs:
           # Một số plugin (file_picker) yêu cầu compileSdk 36 trở lên.
           sed -i -E 's/flutter\.compileSdkVersion/36/' android/app/build.gradle*
           grep -n "compileSdk" android/app/build.gradle*
+          # Số phiên bản tăng theo từng lần build để máy cập nhật được.
+          sed -i -E "s/^version: .*/version: 0.1.${{ github.run_number }}+${{ github.run_number }}/" pubspec.yaml
           flutter build apk --release --split-per-abi
+
+      # Ký bằng keystore cố định (secret). Thiếu secret thì bỏ qua, APK vẫn được tạo.
+      # Bật cả chữ ký v1 (máy vivo cần) và v2.
+      - name: Sign APK with release key
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$KS_B64" ]; then
+            echo "Chưa có secret keystore, giữ APK ký bằng debug key."
+            exit 0
+          fi
+          KS="$RUNNER_TEMP/release.jks"
+          echo "$KS_B64" | base64 -d > "$KS"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          "$BT/zipalign" -f -p 4 "$APK" "$RUNNER_TEMP/aligned.apk"
+          "$BT/apksigner" sign \
+            --ks "$KS" --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KS_PASS --key-pass env:KEY_PASS \
+            --v1-signing-enabled true --v2-signing-enabled true \
+            --out "$APK" "$RUNNER_TEMP/aligned.apk"
+          "$BT/apksigner" verify --verbose --print-certs "$APK"
 
       - name: Publish APK to GitHub Release
         env:
