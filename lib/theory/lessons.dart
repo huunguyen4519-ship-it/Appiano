@@ -234,6 +234,61 @@ final List<Lesson> lessons = [
     ],
   ),
   Lesson(
+    id: 'bai-11-thang-re',
+    title: 'Bài 11: Thang âm Rê trưởng',
+    description: 'Thang âm có Fa thăng (phím đen đầu tiên)',
+    theory: [
+      'Thang âm Rê trưởng có 2 dấu thăng: Fa# và Đô#.',
+      'Fa# nằm ở phím đen đứng giữa nhóm 2 phím đen và nhóm 3 phím đen, ngay trước G.',
+      'Các quãng giữa các nốt giống thang Đô trưởng: cung, cung, nửa, cung, cung, cung, nửa.',
+    ],
+    tips: [
+      'Bấm Fa thường thay vì Fa#, nghe thang bị lệch.',
+      'Quên rằng Đô ở đây cũng phải thăng (Đô#) ở nốt cuối.',
+    ],
+    steps: _seq(
+      [62, 64, 66, 67, 69, 71, 73, 74],
+      [1, 2, 3, 1, 2, 3, 4, 5],
+    ),
+  ),
+  Lesson(
+    id: 'bai-12-hop-am-1-4-5',
+    title: 'Bài 12: Chuyển hợp âm I - IV - V - I',
+    description: 'Bốn hợp âm C, F, G, C trong một bài tập',
+    theory: [
+      'Hợp âm I, IV, V là ba hợp âm chính của một hệ thống âm (ở Đô trưởng: C, F, G).',
+      'Mỗi hợp âm được bấm cùng lúc ba nốt, ngón 1, 3, 5 của tay phải.',
+      'Chuyển hợp âm mượt là giữ tay gần bàn phím, chỉ nhấc ngón cần thiết.',
+    ],
+    tips: [
+      'Nhấc cả bàn tay khi chuyển, làm mất nhịp.',
+      'Bấm hợp âm G rồi nhầm sang nốt B ở giữa.',
+    ],
+    steps: [
+      LessonStep([60, 64, 67], [1, 3, 5]), // C
+      LessonStep([65, 69, 72], [1, 3, 5]), // F
+      LessonStep([67, 71, 74], [1, 3, 5]), // G
+      LessonStep([60, 64, 67], [1, 3, 5]), // C
+    ],
+  ),
+  Lesson(
+    id: 'bai-13-twinkle',
+    title: 'Bài 13: Lấp lánh ngôi sao',
+    description: 'Giai điệu dân ca quen thuộc, 14 nốt',
+    theory: [
+      'Bài này có hai câu, mỗi câu 7 nốt, dùng chủ yếu các nốt của thang Đô trưởng.',
+      'Câu đầu đi lên đến Sol và A, câu sau đi xuống về Đô.',
+    ],
+    tips: [
+      'Nhịp đều: mỗi nốt bằng nhau, không kéo dài nốt cuối câu.',
+      'Ngón 5 và ngón 4 thường bị lẫn khi chơi nhanh.',
+    ],
+    steps: _seq(
+      [60, 60, 67, 67, 69, 69, 67, 65, 65, 64, 64, 62, 62, 60],
+      [1, 1, 5, 5, 4, 4, 3, 4, 4, 3, 3, 2, 2, 1],
+    ),
+  ),
+  Lesson(
     id: 'scale-up',
     title: 'Thang âm đi lên',
     description: 'C D E F G A B C',
