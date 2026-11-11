@@ -76,22 +76,16 @@ jobs:
           grep -n "compileSdk" android/app/build.gradle*
           # Số phiên bản tăng theo từng lần build để máy cập nhật được.
           sed -i -E "s/^version: .*/version: 0.1.${{ github.run_number }}+${{ github.run_number }}/" pubspec.yaml
-          flutter build apk --release
+          flutter build apk --release --split-per-abi
 
       # Chẩn đoán: chỉ in độ dài secret, không in giá trị.
       - name: Check secret presence
         env:
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KS_B64_PLAIN: ${{ secrets.KEYSTORE_BASE64 }}
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KS_PASS_PLAIN: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          KEY_PASS_PLAIN: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_ALIAS_PLAIN: ${{ secrets.KEY_ALIAS }}
         run: |
-          KS_B64="${KS_B64:-$KS_B64_PLAIN}"; KS_PASS="${KS_PASS:-$KS_PASS_PLAIN}"
-          KEY_PASS="${KEY_PASS:-$KEY_PASS_PLAIN}"; KEY_ALIAS="${KEY_ALIAS:-$KEY_ALIAS_PLAIN}"
           echo "len KS_B64=${#KS_B64} KS_PASS=${#KS_PASS} KEY_PASS=${#KEY_PASS} KEY_ALIAS=${#KEY_ALIAS}"
 
       # Ký bằng keystore cố định (secret). Thiếu secret thì bỏ qua, APK vẫn được tạo.
@@ -99,16 +93,10 @@ jobs:
       - name: Sign APK with release key
         env:
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KS_B64_PLAIN: ${{ secrets.KEYSTORE_BASE64 }}
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KS_PASS_PLAIN: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          KEY_PASS_PLAIN: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_ALIAS_PLAIN: ${{ secrets.KEY_ALIAS }}
         run: |
-          KS_B64="${KS_B64:-$KS_B64_PLAIN}"; KS_PASS="${KS_PASS:-$KS_PASS_PLAIN}"
-          KEY_PASS="${KEY_PASS:-$KEY_PASS_PLAIN}"; KEY_ALIAS="${KEY_ALIAS:-$KEY_ALIAS_PLAIN}"
           if [ -z "$KS_B64" ]; then
             echo "Chưa có secret keystore, giữ APK ký bằng debug key."
             exit 0
@@ -116,7 +104,7 @@ jobs:
           KS="$RUNNER_TEMP/release.jks"
           echo "$KS_B64" | base64 -d > "$KS"
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          APK=build/app/outputs/flutter-apk/app-release.apk
+          APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           "$BT/zipalign" -f -p 4 "$APK" "$RUNNER_TEMP/aligned.apk"
           "$BT/apksigner" sign \
             --ks "$KS" --ks-key-alias "$KEY_ALIAS" \
@@ -130,7 +118,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v0.1.${{ github.run_number }}"
-          gh release create "$TAG" build/app/outputs/flutter-apk/app-release.apk \
+          gh release create "$TAG" build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
             --target "${{ github.sha }}" \
             --title "Appiano $TAG" \
             --notes "APK build tự động từ commit ${{ github.sha }}"
