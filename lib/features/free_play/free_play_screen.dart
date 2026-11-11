@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import '../../core/app_feedback.dart';
 import '../../core/audio.dart';
 import '../../core/orientation.dart';
+import '../../core/theme.dart';
 import '../../theory/chords.dart';
 import '../../widgets/app_route.dart';
 import '../../widgets/app_top_bar.dart';
+import '../../widgets/glass_box.dart';
 import '../keyboard/piano_keyboard.dart';
+import '../settings/eq_panel.dart';
 import '../settings/settings_screen.dart';
 import 'chord_bar.dart';
 
@@ -54,6 +57,29 @@ class _FreePlayScreenState extends State<FreePlayScreen> {
     setState(() => _chordKeys = {});
   }
 
+  // Bảng chỉnh EQ nhanh, không phải rời màn chơi đàn.
+  void _openEq() {
+    AppFeedback.tap();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: GlassBox(
+            padding: const EdgeInsets.all(16),
+            child: EqPanel(
+              accent: AppThemeController.instance.accent.value,
+              bandHeight: 150,
+              showNote: false,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,6 +89,11 @@ class _FreePlayScreenState extends State<FreePlayScreen> {
             AppTopBar(
               title: const Text('Chơi đàn'),
               actions: [
+                IconButton(
+                  tooltip: 'Bộ chỉnh âm',
+                  icon: const Icon(Icons.tune),
+                  onPressed: _openEq,
+                ),
                 IconButton.filledTonal(
                   tooltip: 'Chơi hợp âm',
                   isSelected: _mode == PlayMode.chords,
