@@ -81,22 +81,34 @@ jobs:
       # Chẩn đoán: chỉ in độ dài secret, không in giá trị.
       - name: Check secret presence
         env:
-          KS_B64: ${{ secrets.KEYSTORE_BASE64 || secrets.ANDROID_KEYSTORE_BASE64 }}
-          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASS: ${{ secrets.KEY_PASSWORD || secrets.ANDROID_KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ANDROID_KEY_ALIAS }}
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_B64_PLAIN: ${{ secrets.KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_PASS_PLAIN: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_PASS_PLAIN: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_ALIAS_PLAIN: ${{ secrets.KEY_ALIAS }}
         run: |
+          KS_B64="${KS_B64:-$KS_B64_PLAIN}"; KS_PASS="${KS_PASS:-$KS_PASS_PLAIN}"
+          KEY_PASS="${KEY_PASS:-$KEY_PASS_PLAIN}"; KEY_ALIAS="${KEY_ALIAS:-$KEY_ALIAS_PLAIN}"
           echo "len KS_B64=${#KS_B64} KS_PASS=${#KS_PASS} KEY_PASS=${#KEY_PASS} KEY_ALIAS=${#KEY_ALIAS}"
 
       # Ký bằng keystore cố định (secret). Thiếu secret thì bỏ qua, APK vẫn được tạo.
       # Bật cả chữ ký v1 (máy vivo cần) và v2.
       - name: Sign APK with release key
         env:
-          KS_B64: ${{ secrets.KEYSTORE_BASE64 || secrets.ANDROID_KEYSTORE_BASE64 }}
-          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASS: ${{ secrets.KEY_PASSWORD || secrets.ANDROID_KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ANDROID_KEY_ALIAS }}
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_B64_PLAIN: ${{ secrets.KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_PASS_PLAIN: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_PASS_PLAIN: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_ALIAS_PLAIN: ${{ secrets.KEY_ALIAS }}
         run: |
+          KS_B64="${KS_B64:-$KS_B64_PLAIN}"; KS_PASS="${KS_PASS:-$KS_PASS_PLAIN}"
+          KEY_PASS="${KEY_PASS:-$KEY_PASS_PLAIN}"; KEY_ALIAS="${KEY_ALIAS:-$KEY_ALIAS_PLAIN}"
           if [ -z "$KS_B64" ]; then
             echo "Chưa có secret keystore, giữ APK ký bằng debug key."
             exit 0
