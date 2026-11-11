@@ -78,6 +78,16 @@ jobs:
           sed -i -E "s/^version: .*/version: 0.1.${{ github.run_number }}+${{ github.run_number }}/" pubspec.yaml
           flutter build apk --release --split-per-abi
 
+      # Chẩn đoán: chỉ in độ dài secret, không in giá trị.
+      - name: Check secret presence
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "len KS_B64=${#KS_B64} KS_PASS=${#KS_PASS} KEY_PASS=${#KEY_PASS} KEY_ALIAS=${#KEY_ALIAS}"
+
       # Ký bằng keystore cố định (secret). Thiếu secret thì bỏ qua, APK vẫn được tạo.
       # Bật cả chữ ký v1 (máy vivo cần) và v2.
       - name: Sign APK with release key
