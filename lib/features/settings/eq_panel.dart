@@ -51,7 +51,7 @@ class EqPanel extends StatelessWidget {
         if (showNote) ...[
           const SizedBox(height: 8),
           Text(
-            'Thanh trượt đã được lưu. Âm thanh chưa đổi theo bộ chỉnh âm, phần này sẽ nối vào ở bước sau.',
+            'Áp lên tiếng piano. Sau khi bạn ngừng kéo khoảng nửa giây, âm thanh sẽ đổi.',
             style: theme.textTheme.bodySmall,
           ),
         ],

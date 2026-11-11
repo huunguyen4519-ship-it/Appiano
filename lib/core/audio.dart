@@ -1,6 +1,14 @@
+import 'dart:async';
 import 'dart:math';
+import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
+
+import 'eq.dart';
+import 'settings_store.dart';
+import 'wav.dart';
 
 /// Nốt gốc của mẫu tổng hợp dự phòng (C4 = 60).
 const int sampleBaseNote = 60;
@@ -21,7 +29,33 @@ const Map<int, String> _pitchClassNames = {0: 'C', 3: 'Ds', 6: 'Fs', 9: 'A'};
 
 String _samplePath(int midi) {
   final name = _pitchClassNames[midi % 12]!;
-  return 'assets/piano/$name${midi ~/ 12 - 1}.ogg';
+  return 'assets/piano/$name${midi ~/ 12 - 1}.wav';
+}
+
+/// Việc lọc EQ cho cả bộ mẫu, chạy ở isolate để không làm giật giao diện.
+class _EqJob {
+  final Map<int, Int16List> pcm;
+  final List<double> gains;
+  const _EqJob(this.pcm, this.gains);
+}
+
+Map<int, Uint8List> _applyEqJob(_EqJob job) {
+  final out = <int, Uint8List>{};
+  final rate = PianoEq.sampleRate.toInt();
+  for (final entry in job.pcm.entries) {
+    final src = entry.value;
+    final input = Float32List(src.length);
+    for (var i = 0; i < src.length; i++) {
+      input[i] = src[i] / 32768.0;
+    }
+    final eq = PianoEq.process(input, job.gains);
+    final ints = Int16List(eq.length);
+    for (var i = 0; i < eq.length; i++) {
+      ints[i] = (eq[i] * 32767).round().clamp(-32768, 32767);
+    }
+    out[entry.key] = Wav(ints, rate).encode();
+  }
+  return out;
 }
 
 /// Thời gian mờ dần sau khi thả phím.
@@ -42,8 +76,14 @@ class PianoAudio {
 
   static const _uiNames = ['click', 'correct', 'wrong', 'done'];
 
-  /// Mẫu piano thật, khóa là số MIDI của mẫu.
+  /// Mẫu piano thật đã giải mã (chưa qua EQ), khóa là số MIDI.
+  final Map<int, Int16List> _pcm = {};
+
+  /// Mẫu piano đang phát, đã qua EQ, khóa là số MIDI.
   final Map<int, AudioSource> _samples = {};
+
+  Timer? _eqDebounce;
+  int _eqGen = 0;
 
   /// Mẫu tổng hợp dự phòng, chỉ dùng khi không nạp được mẫu thật nào.
   AudioSource? _fallback;
@@ -57,10 +97,16 @@ class PianoAudio {
     await SoLoud.instance.init();
     for (final midi in _sampleMidis) {
       try {
-        _samples[midi] = await SoLoud.instance.loadAsset(_samplePath(midi));
+        final data = await rootBundle.load(_samplePath(midi));
+        final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+        _pcm[midi] = Wav.decode(bytes).samples;
       } catch (_) {
         // Thiếu một mẫu thì nốt đó dùng mẫu gần nhất, không làm app lỗi.
       }
+    }
+    await _rebuildSamples();
+    for (final band in SettingsStore.instance.eqGains) {
+      band.addListener(_onEqChanged);
     }
     try {
       _fallback = await SoLoud.instance.loadAsset('assets/piano_c4.wav');
@@ -70,6 +116,35 @@ class PianoAudio {
         _ui[name] = await SoLoud.instance.loadAsset('assets/ui/$name.wav');
       } catch (_) {
         // Thiếu âm giao diện thì bỏ qua, không làm app lỗi.
+      }
+    }
+  }
+
+  // Kéo thanh trượt liên tục thì chờ người dùng ngừng rồi mới lọc lại.
+  void _onEqChanged() {
+    _eqDebounce?.cancel();
+    _eqDebounce = Timer(const Duration(milliseconds: 250), _rebuildSamples);
+  }
+
+  /// Lọc lại toàn bộ mẫu theo EQ hiện tại và nạp vào SoLoud.
+  Future<void> _rebuildSamples() async {
+    if (_pcm.isEmpty) return;
+    final gen = ++_eqGen;
+    final gains = [for (final band in SettingsStore.instance.eqGains) band.value];
+    final wavs = await compute(_applyEqJob, _EqJob(_pcm, gains));
+    // Có thay đổi mới hơn trong lúc đang lọc: bỏ kết quả cũ.
+    if (gen != _eqGen) return;
+    for (final entry in wavs.entries) {
+      try {
+        final next = await SoLoud.instance.loadMem(
+          'piano_${entry.key}_$gen',
+          entry.value,
+        );
+        final old = _samples[entry.key];
+        _samples[entry.key] = next;
+        if (old != null) SoLoud.instance.disposeSource(old);
+      } catch (_) {
+        // Lỗi một mẫu thì mẫu đó giữ bản cũ.
       }
     }
   }
